@@ -1,0 +1,41 @@
+#summary One-sentence summary of this page.
+
+= Introduction =
+
+V language is a simple concatenative language inspired by joy. Currently it
+exists in JVM land only.
+
+= Usage =
+ * invocation
+{{{
+   java v/V
+      |V|
+   |
+}}}
+ * Simple arithmetic
+{{{
+   |1 2 +
+   =3
+}}}
+
+ * Define words using the function '.'
+{{{
+   |[add +].
+   |1 1 add
+   =2
+   |[check [10 >?] ['is lt 10' println] ['is gt 10' println] ifte].
+
+   |1 check
+   =is lt 10
+   |100 check
+   =is gt 10
+}}}
+
+
+
+
+
+
+
+
+
