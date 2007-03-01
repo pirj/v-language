@@ -37,7 +37,7 @@ exists in JVM land only.
    |[qsort
       [small]
       []
-      [uncons [>] split]
+      [uncons [>?] split]
       [[swap] dip cons concat]
       binrec].
 
@@ -46,12 +46,4 @@ exists in JVM land only.
    =1 2 3 8
 }}}
 Notice the similarity between this and the joy version [http://en.wikipedia.org/wiki/Joy_(programming_language) here].
-Currently I am just aiming to be a dialect of joy, and later expand it.  
-
-
-
-
-
-
-
 
