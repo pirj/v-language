@@ -31,9 +31,17 @@ exists in JVM land only.
    =is gt 10
 }}}
 
-
-
-
+ * private definitions
+{{{
+  |[usingpi
+     [pi 3.14].
+     2 pi *
+   ].
+  |usingpi
+  =6.28
+  |pi
+  =>{word pi is not defined}
+}}}
 
 
 
