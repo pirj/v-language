@@ -24,7 +24,7 @@ exists in JVM land only.
    |[add +].
    |1 1 add
    =2
-   |[check [10 >?] ['is lt 10' println] ['is gt 10' println] ifte].
+   |[check [10 >?] ['is gt 10' println] ['is lt 10' println] ifte].
 
    |1 check
    =is lt 10
