@@ -6,6 +6,7 @@ V language is a simple concatenative language inspired by joy. Currently it
 exists in JVM land only.
 
 = Usage =
+(Notice that the prompt is '|')
  * invocation
 {{{
    java v/V
@@ -31,17 +32,23 @@ exists in JVM land only.
    =is gt 10
 }}}
 
- * private definitions
+  * how qsort would look like when the primitives are available
 {{{
-  |[usingpi
-     [pi 3.14].
-     2 pi *
-   ].
-  |usingpi
-  =6.28
-  |pi
-  =>{word pi is not defined}
+   |[qsort
+      [small]
+      []
+      [uncons [>] split]
+      [[swap] dip cons concat]
+      binrec].
+
+   |[1 3 2 8] qsort
+   |?
+   =1 2 3 8
 }}}
+Notice the similarity between this and the joy version [http://en.wikipedia.org/wiki/Joy_(programming_language) here].
+Currently I am just aiming to be a dialect of joy, and later expand it.  
+
+
 
 
 
