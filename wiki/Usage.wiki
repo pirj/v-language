@@ -47,3 +47,43 @@ exists in JVM land only.
 }}}
 Notice the similarity between this and the joy version [http://en.wikipedia.org/wiki/Joy_(programming_language) here].
 
+=====================================================
+  = differences from joy. =
+
+  * No invariant stack for combinators.
+The stack invariant combinators does not exist as of now.
+ie the ifte condition consumes values from the stack unlike joy
+which saves the stack state before execution of condition and restores it
+after it.
+
+So a recursive def of factorial looks like below:
+{{{
+[fact
+    [dup 0 =]
+        [pop 1]
+        [dup 1 - fact *]
+    ifte].
+}}}
+
+Notice how we have to do the [dup 0 =] instead of just [0 =] in the classic joy.
+(the definition is accomplished by the word '.')
+
+  * V also allows internal definitions.
+ie
+{{{
+[area
+    [pi 3.1415].
+    [sq dup *].
+    sq pi *].
+}}}
+
+  * Homoiconic
+V strives to be as much homoiconic as possible so a V program that is invoked
+from the command line with args a b c is no different from this.
+{{{
+|a b c [my v prog]i
+}}}
+ie: the args are pushed to the stack, the quote i passed to stack and dequoted.
+
+This means the special syntax for DEFINE LIBRA etc in joy are not present in V
+=====================================================
