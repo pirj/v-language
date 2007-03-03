@@ -86,4 +86,6 @@ from the command line with args a b c is no different from this.
 ie: the args are pushed to the stack, the quote i passed to stack and dequoted.
 
 This means the special syntax for DEFINE LIBRA etc in joy are not present in V
+
+
 =====================================================
