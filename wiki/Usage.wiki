@@ -1,4 +1,4 @@
-#summary V usage
+﻿#summary V usage
 
 = Introduction =
 
@@ -32,12 +32,12 @@ exists in JVM land only.
    =is gt 10
 }}}
 
-  * how qsort would look like when the primitives are available
+  * how qsort would look like this.
 {{{
    |[qsort
-      [small]
+      [small?]
       []
-      [uncons [>] split]
+      [uncons [>] split&]
       [[swap] dip cons concat]
       binrec].
 
