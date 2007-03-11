@@ -331,7 +331,7 @@ file     F -> B
 |first&     A -> F  (first in joy)
     F is the first member of the non-empty aggregate A.
 
-float     R -> B 
+|float?     R -> B 
     Tests whether R is a float.
 
 floor     F -> G 
@@ -472,7 +472,7 @@ infra     L1 [P] -> L2
     element of L1 is used as the top of stack, and after execution of P the
     top of stack becomes the first element of L2.
 
-integer     X -> B 
+|integer?     X -> B  [integer in Joy]
     Tests whether X is an integer.
 
 intern     "sym" -> sym 
@@ -481,7 +481,7 @@ intern     "sym" -> sym
 ldexp     F I -> G 
     G is F times 2 to the Ith power.
 
-leaf     X -> B 
+|leaf     X -> B 
     Tests whether X is not a list.
 
 |linrec     [P] [T] [R1] [R2] -> ... 
@@ -540,7 +540,7 @@ neg     I -> J
 |not     X -> Y 
     Y is the complement of set X, logical negation for truth values.
 
-null     X -> B 
+|null?     X -> B 
     Tests for empty aggregate X or zero numeric.
 
 nullary     [P] -> R 
@@ -676,7 +676,7 @@ stdin     -> S
 stdout     -> S 
     Pushes the standard output stream.
 
-step     A [P] -> ... 
+|step     A [P] -> ... 
     Sequentially putting members of aggregate A onto stack, executes P for
     each member of A.
 
