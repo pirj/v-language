@@ -24,6 +24,9 @@ ie:
 They have counterparts that do not have '&' in their name.
     [1 2 3] length => 3
 
+some examples in V
+=====================
+
 qsort:
 
 [qsort
@@ -110,7 +113,7 @@ it can also be done on tail.
 see the last examples for tests using the V
 
 =======================================
-Examples
+Examples (available in examples.v)
 =======================================
 {{{
 # definition of show.
