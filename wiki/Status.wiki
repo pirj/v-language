@@ -21,6 +21,9 @@ ie:
     [1 2 3] first& => [1 2 3] 1
     [1 2 3] length& => [1 2 3] 3
 
+They have counterparts that do not have '&' in their name.
+    [1 2 3] length => 3
+
 qsort:
 
 [qsort
@@ -49,12 +52,12 @@ some points to mention here.
 the let makes use of a slightly dirty word '@',
 it defines things in the binding of its parent.
 let is defined as [rev [unit cons rev @ true] map pop]
-in prologue. the let can be used in any place, not just
-inside a word definition.
+It can be used in any place, not just inside a word definition.
 
 it is probably not a good idea to use let, since the naming of internal
 variables makes it impure both in both concatenative and functional terms.
-The 'let' and '@' may disappear in the future.
+The 'let' and '@' may disappear in the future (and '.' may become strict
+about redefining words).
 
 the root1 root2 and discr are internal definitions created
 using '.'
@@ -86,6 +89,25 @@ eg:
 =hi there throw
 =true shield
 
+Using the stack shuffling 'V'
+=======================================
+
+[1 2] [[a b] : a b] V 
+=1 2
+
+'_' is used to ignore the value on the quote
+'*' is used to indicate that there are 0 or more elements
+left. and *xxx can be used to name them.
+
+[1 2 3 4 5] [[a *rest] : *rest a] V 
+=2 3 4 5 1
+
+it can also be done on tail.
+
+[1 2 3 4 5] [[*rest a] : a *rest] V 
+5 1 2 3 4
+
+see the last examples for tests using the V
 
 =======================================
 Examples
