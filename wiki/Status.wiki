@@ -1,4 +1,16 @@
 ﻿{{{
+Use ? to see the last parameter in the stack.
+?? will show you the entire stack.
+(The prompt is assumed to be '|')
+ie.
+|1 1
+|??
+=(1 1)
+|+
+|??
+=(2)
+
+
 differences from joy.
 =====================================================
 V allows internal definitions.
@@ -18,8 +30,10 @@ ie: the args are pushed to the stack, the quote i passed to stack and dequoted.
 
 Things that end with '&' are non destructive (they dont consume values from stack).
 ie:
-    [1 2 3] first& => [1 2 3] 1
-    [1 2 3] length& => [1 2 3] 3
+    |[1 2 3] first& ??
+    =([1 2 3] 1)
+    |[1 2 3] length& ??
+    =([1 2 3] 3)
 
 They have counterparts that do not have '&' in their name.
     [1 2 3] length => 3
@@ -36,7 +50,8 @@ qsort:
     [[swap] dip cons concat]
     binrec].
 
-[0 9 6 7 8 4 6 2] qsort
+|[0 9 6 7 8 4 6 2] qsort ??
+=([0 2 4 6 6 7 8 9])
 
 
 getting the roots
@@ -92,6 +107,53 @@ eg:
 =hi there throw
 =true shield
 
+Using Java calls.
+=======================================
+The word 'java' interprets the java method calls.  call syntax is
+|[parameter class/obj method] java
+Primitive types are automatically converted to their java types.
+
+|["I am here" length] java ?
+=9
+
+Here the string "I am here" is converted into a java.lang.String and then
+the method length is invoked on this object.
+
+Using a static method is the simplest operation on a class. The class name
+is used as a symbol. If you pass a symbol in the place of class/obj it is
+interpreted as a class name. else it is taken as a java object instance.
+
+|[-100 java.lang.Math abs] java ?
+=100
+
+Invoking a constructor
+
+|[java.util.Date new] java ?
+={Tue Mar 13 19:59:22 IST 2007}
+
+-- The java objects are always shown with '{}' around them.
+
+and using that instance to invoke a method.
+|unit [getDay] concat java ?
+=2
+
+
+Using an array as an argument.
+
+|[[~a ~b ~c] java.lang.String new] java ?
+='abc'
+
+Accessing static fields
+
+|[v.V version$] java ?
+='0.002'
+
+setting them.
+|['0.001' v.V version$] java
+|[v.V version$] java ?
+='0.001'
+
+
 Using the stack shuffling 'V'
 =======================================
 
@@ -111,7 +173,7 @@ it can also be done on tail.
 5 1 2 3 4
 
 see the last examples for tests using the V
-
+}}}
 =======================================
 Examples (available in examples.v)
 =======================================
@@ -132,8 +194,27 @@ Examples (available in examples.v)
     expected i not [msg throw] if
     msg put ' success' puts].
 
+[comment pop].
+
 #=========================================
-'Starting tests...' puts
+[The tests have this format.
+There are two quotes, one the result and the second the test quote.
+
+First the test quote is evaluated, this will give an answer in the stack. Then the result
+quote is executed, and it should leave a value true in the stack.
+ie:
+
+# result verification quote. (This checks if the value currently in the stack is equal to '2')
+[
+    2 =
+]
+# test quote. this is executed first, and then the result verification quote is executed.
+[
+    1 1 +
+] 'message' test
+# the 'message' is printed along with success or failure of the test.
+
+] comment
 '=========================================' puts
 # basic stack operations
 [333 =] [111  222 +] ' simple addition ' test
@@ -143,7 +224,7 @@ Examples (available in examples.v)
 [false =] [true  false  or  true  and  not] 'boolean operations' test
 #=========================================
 # list operations.
-[[5 4 3 2 1] =] [[1 2 3 4 5] rev] 'list reverse' test
+[[5 4 3 2 1] =] [[1 2 3 4 5] reverse] 'list reverse' test
 [[peter paul mary jane] =] [[peter paul]  [mary jane]  concat] 'list reverse' test
 
 #=========================================
@@ -221,19 +302,18 @@ Examples (available in examples.v)
     # definitions are not used, but it makes our lives easier).
     [a b c] let
 
-    # just showing off.
     [<< swap cons].
     [! [unit i] map].
 
     [" a: " a " b: " b " c: " c]! show
     
     [discr b dup * 4 a * c * - sqrt].
-    [] " discr: " << discr << rev show
+    [] " discr: " << discr << reverse show
 
     [root1 0 b - discr + 2 a * /].
     [root2 0 b - discr - 2 a * /].
 
-    [] " root1: " << root1 << " root2: " << root2 << rev show
+    [] " root1: " << root1 << " root2: " << root2 << reverse show
     root1 root2].
 
 [-5.0 = swap 3.0 = and] [2 4 -30 roots] 'roots' test
@@ -328,14 +408,14 @@ mycmd
     [1 2 4 5 6] 3 [[a *] b : [a b]] V
 ] 'V(*)' test
 
-# rev slurp
+# reverse slurp
 # [1 2 4 5 6] 3 [[* a] b : [a b]] => [6 3]
 [
     [6 3] =
 ]
 [
     [1 2 4 5 6] 3 [[* a] b : [a b]] V
-] 'V(rev*)' test
+] 'V(reverse*)' test
 
 # named slurp
 # [1 2 4 5 6] 3 [[a *rest] b : [*rest b]] => [2 4 5 6 3]
@@ -353,12 +433,56 @@ mycmd
 ]
 [
     [1 2 4 5 6] 3 [[*rest a] b : [[b *rest] a]] V
-] 'V(named rev *)' test
+] 'V(named reverse *)' test
+
+#=======================================
+#java
+[
+    9 =
+]
+[
+    ["I am here" length] java
+] 'V (java)' test
+
+[
+    100 =
+]
+[
+    [-100 java.lang.Math abs] java
+] 'V (java)' test
+
+[
+    integer?
+]
+[
+    [java.util.Date new] java unit [getDay] concat java
+] 'V (java)' test
+
+[
+    'abc' =
+]
+[
+    [[~a ~b ~c] java.lang.String new] java
+] 'V (java)' test
+
+[
+    '0.002' =
+]
+[
+    [v.V version$] java
+] 'V (java)' test
+
+[
+    '0.001' =
+]
+[
+    ['0.001' v.V version$] java
+] 'V (java)' test
 
 "--------Success-----------" puts
-
 }}}
 
+{{{
 Defined Words:
 =====================================================
 # From the joy page.
