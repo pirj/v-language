@@ -175,9 +175,15 @@ it can also be done on tail.
 see the last examples for tests using the V
 }}}
 =======================================
+
 Examples see
+
 [http://v-language.googlecode.com/svn/trunk/v/examples.v examples]
+
 =======================================
+
 Functions available:
+
 [Functions functions]
+
 =======================================
