@@ -1,5 +1,3 @@
-#summary One-sentence summary of this page.
-
 = Introduction =
 
 These are from the [http://www.latrobe.edu.au/philosophy/phimvt/joy/html-manual.html Joy] page. The functions not available in V are marked with a starting '*'
@@ -638,4 +636,3 @@ Aborts execution of current V program, returns to V main cycle.
 
 *quit : -> 
 Exit from V. V uses ^D instead.
-
