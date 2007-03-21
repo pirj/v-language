@@ -154,31 +154,30 @@ setting them.
 ='0.001'
 
 
-Using the stack shuffling 'V'
+Using the stack shuffling 'view'
 =======================================
 
-[1 2] [[a b] : a b] V 
+[1 2] [[a b] : a b] view
 =1 2
 
 '_' is used to ignore the value on the quote
 '*' is used to indicate that there are 0 or more elements
 left. and *xxx can be used to name them.
 
-[1 2 3 4 5] [[a *rest] : *rest a] V 
+[1 2 3 4 5] [[a *rest] : *rest a] view
 =2 3 4 5 1
 
 it can also be done on tail.
 
-[1 2 3 4 5] [[*rest a] : a *rest] V 
+[1 2 3 4 5] [[*rest a] : a *rest] view 
 5 1 2 3 4
 
-see the last examples for tests using the V
+see the last examples for tests using view
 }}}
 =======================================
 
 Examples see
-
-[http://v-language.googlecode.com/svn/trunk/v/examples.v examples]
+[http://v-language.googlecode.com/svn/trunk/scripts/test.v examples]
 
 =======================================
 

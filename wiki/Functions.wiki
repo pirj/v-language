@@ -1,4 +1,4 @@
-= Introduction =
+﻿= Introduction =
 
 These are from the [http://www.latrobe.edu.au/philosophy/phimvt/joy/html-manual.html Joy] page. The functions not available in V are marked with a starting '*'
 
@@ -100,13 +100,13 @@ Interchanges X and Z
 reverse : [A B C D] -> [D C B A]
 reverse the entire list for any list.
 
-*popd : Y Z -> Z 
+popd : Y Z -> Z 
 As if defined by: popd == [pop] dip 
 
-*dupd : Y Z -> Y Y Z 
+dupd : Y Z -> Y Y Z 
 As if defined by: dupd == [dup] dip 
 
-*swapd : X Y Z -> Y X Z 
+swapd : X Y Z -> Y X Z 
 As if defined by: swapd == [swap] dip 
 
 *rollupd : X Y Z W -> Z X Y W 
@@ -121,13 +121,13 @@ As if defined by: rotated == [rotate] dip
 pop : X -> 
 Removes X from top of the stack. 
 
-*choice : B T F -> X 
+choice : B T F -> X 
 If B is true, then X = T else X = F. 
 
 or : X Y -> Z 
 Z is the union of sets X and Y, logical disjunction for truth values. 
 
-*xor : X Y -> Z 
+xor : X Y -> Z 
 Z is the symmetric difference of sets X and Y, logical exclusive disjunction for truth values. 
 
 and : X Y -> Z 
@@ -630,6 +630,15 @@ Transfers input to file whose name is "filnam.ext". On end-of-file returns to pr
 
 use : "filnam" -> 
 Transfers input to file whose name is "filnam.v". On end-of-file returns to previous input file. 
+
+module : Q -> 
+(not like Joy) defines a module.
+
+publish : Q->
+(not in Joy) publishes internal functions as part of module.
+
+view : Q->Q
+(not in Joy) Stack rearrangement function. takes a quote that contains a template and a required result, and applies template on the stack to produce result.
 
 *abort : -> 
 Aborts execution of current V program, returns to V main cycle. 
