@@ -340,10 +340,10 @@ R is the non-empty aggregate A with its first member removed.
 *compare : A B -> I 
 I (=-1,0,+1) is the comparison of aggregates A and B. The values correspond to the predicates <=, =, >=. 
 
-*at : A I -> X 
+at : A I -> X 
 X (= A[I]) is the member of A at position I. 
 
-*of : I A -> X 
+of : I A -> X 
 X (= A[I]) is the I-th member of aggregate A. 
 
 size : A -> I 
@@ -361,10 +361,10 @@ F and R are the first and the rest of non-empty aggregate A.
 *unswons : A -> R F 
 R and F are the rest and the first of non-empty aggregate A. 
 
-*drop : A N -> B 
+drop : A N -> B 
 Aggregate B is the result of deleting the first N elements of A. 
 
-*take : A N -> B 
+take : A N -> B 
 Aggregate B is the result of retaining just the first N elements of A. 
 
 concat : S T -> U 
@@ -415,7 +415,7 @@ Either both X and Y are numeric or both are strings or symbols. Tests whether X 
 *has : A X -> B 
 Tests whether aggregate A has X as a member. 
 
-*in : X A -> B 
+in : X A -> B 
 Tests whether X is a member of aggregate A. 
 
 integer? : X -> B 
