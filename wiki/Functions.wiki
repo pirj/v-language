@@ -113,13 +113,13 @@ As if defined by: dupd == [dup] dip
 swapd : X Y Z -> Y X Z 
 As if defined by: swapd == [swap] dip 
 
-*rollupd : X Y Z W -> Z X Y W 
+rollupd : X Y Z W -> Z X Y W 
 As if defined by: rollupd == [rollup] dip 
 
-*rolldownd : X Y Z W -> Y Z X W 
+rolldownd : X Y Z W -> Y Z X W 
 As if defined by: rolldownd == [rolldown] dip 
 
-*rotated : X Y Z W -> Z Y X W 
+rotated : X Y Z W -> Z Y X W 
 As if defined by: rotated == [rotate] dip 
 
 pop : X -> 
