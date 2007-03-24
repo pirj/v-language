@@ -88,13 +88,17 @@ Pushes an extra copy of X onto stack.
 swap : X Y -> Y X 
 Interchanges X and Y on top of the stack. 
 
-lroll (rollup) : X Y Z -> Z X Y 
+lroll : [X Y .. Z] -> [Z X Y ..]
+
+rollup : X Y Z -> Z X Y 
 Moves X and Y up, moves Z down 
 
-rroll (rolldown) : X Y Z -> Y Z X 
+rroll : [X .. Y Z] -> [..Y Z X]
+
+rroll : X Y Z -> Y Z X 
 Moves Y and Z down, moves X up 
 
-*rotate : X Y Z -> Z Y X 
+rotate : X Y Z -> Z Y X 
 Interchanges X and Z 
 
 reverse : [A B C D] -> [D C B A]
@@ -328,7 +332,7 @@ The list [X Y ..] becomes the new stack.
 cons : X A -> B 
 Aggregate B is A with a new member X (first member for sequences). 
 
-*swons : A X -> B 
+swons : A X -> B 
 Aggregate B is A with a new member X (first member for sequences). 
 
 first : A -> F 
