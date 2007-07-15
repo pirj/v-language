@@ -2,6 +2,10 @@
 
 These are from the [http://www.latrobe.edu.au/philosophy/phimvt/joy/html-manual.html Joy] page. The functions not available in V are marked with a starting '*'
 
+The math functions can be implemented using straight forward java calls from within V. See scripts/test.v for examples, hence I am not looking at them for the moment.
+
+argc and argv are not used. instead the parameters that V was invoked with, is pushed into stack at the start of execution.
+quit is just ^D
 
 = Details =
 {{{
@@ -43,7 +47,7 @@ Pushes largest integer (platform dependent). Typically it is 32 bits.
 *setsize : -> setsize 
 Pushes the maximum number of elements in a set (platform dependent). Typically it is 32, and set members are in the range 0..31. 
 
-*stack : .. X Y Z -> .. X Y Z [Z Y X ..] 
+stack : .. X Y Z -> .. X Y Z [Z Y X ..] 
 Pushes the stack as a list. 
 
 *conts : -> [[P] [Q] ..] 
@@ -326,7 +330,7 @@ Stream S is repositioned to position P relative to whence-point W, where W = 0, 
 *ftell : S -> S I 
 I is the current position of stream S. 
 
-*unstack : [X Y ..] -> ..Y X 
+unstack : [X Y ..] -> ..Y X 
 The list [X Y ..] becomes the new stack. 
 
 cons : X A -> B 
@@ -575,13 +579,16 @@ Applies test B to members of aggregate A, X = true if some pass.
 all : A [B] -> X 
 Applies test B to members of aggregate A, X = true if all pass. 
 
-*treestep : T [P] -> ... 
+treestep : T [P] -> ... 
 Recursively traverses leaves of tree T, executes P for each leaf. 
 
-*treerec : T [O] [C] -> ... 
+treemap : T [O] [C] -> ... 
+T is a tree. like treestep but preserves the tree structure.
+
+treerec : T [O] [C] -> ... 
 T is a tree. If T is a leaf, executes O. Else executes [[O] [C] treerec] C. 
 
-*treegenrec : T [O1] [O2] [C] -> ... 
+treegenrec : T [O1] [O2] [C] -> ... 
 T is a tree. If T is a leaf, executes O1. Else executes O2 and then [[O1] [O2] [C] treegenrec] C. miscellaneous commands 
 
 help : -> 
@@ -608,12 +615,6 @@ Escapes to shell, executes string "command". The string may cause execution of a
 *getenv : "variable" -> "value" 
 Retrieves the value of the environment variable "variable". 
 
-*argv : -> A 
-Creates an aggregate A containing the interpreter's command line arguments. In V the arguments are the starting stack for any program. so we do not support a separate argv and argc
-
-*argc : -> I 
-Pushes the number of command line arguments. This is quivalent to 'argv size'. 
-
 *get : -> F 
 Reads a factor from input and pushes it onto stack. 
 
@@ -629,23 +630,15 @@ N : numeric, writes character whose ASCII is N.
 *putchars : "abc.." -> 
 Writes abc.. (without quotes) 
 
-*include : "filnam.ext" -> 
-Transfers input to file whose name is "filnam.ext". On end-of-file returns to previous input file. 
-
-use : "filnam" -> 
+use (include in joy) : "filnam" -> 
 Transfers input to file whose name is "filnam.v". On end-of-file returns to previous input file. 
 
 module : Q -> 
 (not like Joy) defines a module.
 
-publish : Q->
-(not in Joy) publishes internal functions as part of module.
-
 view : Q->Q
 (not in Joy) Stack rearrangement function. takes a quote that contains a template and a required result, and applies template on the stack to produce result.
 
-*abort : -> 
+abort : -> 
 Aborts execution of current V program, returns to V main cycle. 
 
-*quit : -> 
-Exit from V. V uses ^D instead.
