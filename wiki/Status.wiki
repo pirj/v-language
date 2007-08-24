@@ -82,30 +82,28 @@ using '.'
 
 use help to see all the current bindings
 
-Using throw and shield
+Using throw and catch
 =====================
-each invocation of shield takes a quote as a parameter.
-when throw is done, the shields are applied in the reverse order
-any shield that leaves a 'true' value in the stack will stop the
-propagation of throw down the stack.
-
-The stack is restored on a shield that left true.
 
 eg:
 
-|[cmdthrows
-        [dup puts 'false shield' puts false] shield
+[cmdthrows
+    [
         'hi there throw' throw
+    ] [puts 'exception continued' puts ' more' throw] catch
 ].
-|[mycmd
-        [dup puts 'true shield' puts true] shield
+[mycmd
+    [
         cmdthrows
+    ] [puts 'exception caught' puts] catch
 ].
+mycmd
+
 |mycmd
 =hi there throw
-=false shield
-=hi there throw
-=true shield
+=exception continued
+=more
+=exception caught
 
 Using Java calls.
 =======================================
