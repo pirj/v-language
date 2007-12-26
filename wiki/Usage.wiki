@@ -64,9 +64,10 @@ So a recursive def of factorial looks like below:
         [dup 1 - fact *]
     ifte].
 }}}
-
+{{{
 Notice how we have to do the [dup 0 =] instead of just [0 =] in the classic joy.
 (the definition is accomplished by the word '.')
+}}}
 
   * V also allows internal definitions.
 ie
