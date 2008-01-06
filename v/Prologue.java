@@ -487,8 +487,7 @@ public class Prologue {
                         c.store.put("if:action", action);
 
                         if (cond.type == Type.TQuote) {
-                            Cont ifcont = new Cont(cond.qvalue().tokens().iterator(),
-                                    q.child(), c);
+                            Cont ifcont = new Cont(cond.qvalue(),q.child(), c);
                             c.n = p.now; // save the stack.
                             c.top = Cond;
                             return ifcont;
@@ -516,8 +515,7 @@ public class Prologue {
                         // dequote the action and push it to stack.
                         if (cond.bvalue()) {
                             Term action = (Term) c.store.get("if:action");
-                            Cont cont = new Cont(action.qvalue().tokens().iterator(),
-                                    q.child(), c);
+                            Cont cont = new Cont(action.qvalue(),q.child(), c);
                             return cont;
                         }
                         return c;
@@ -535,32 +533,77 @@ public class Prologue {
     };
 
     static Cmd _when = new Cmd() {
-        public void eval(VFrame q) {
+        final int Start=0,LStart=1,Cond=2,Eval=3,Exit=4;
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
+            switch (c.top) {
+                case Start:
+                    {
+                        Term wquote = p.pop();
+                        Cont cont = new Cont(wquote.qvalue(),q.child(), c);
+                        // making sure that we come back.
+                        cont.sym = c.sym;
+                        cont.cmd = c.cmd;
+                        cont.op = c.op;
+                        cont.top = LStart;
 
-            Term wquote = p.pop();
+                        c.top = Exit; // make sure that we exit once we finish the loop.
+                        return cont;
+                    }
+                case LStart:
+                    {
+                        if (c.hasNext()) {
+                            Term cond = c.next();
+                            Term action = c.next();
+                            c.store.put("if:action", action);
 
-            Iterator<Term> fstream = wquote.qvalue().tokens().iterator();
-
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term cond = fstream.next();
-                Term action = fstream.next();
-
-                if (cond.type == Type.TQuote) {
-                    Node<Term> n = p.now;
-                    Trampoline.doeval(cond.qvalue(),q);
-                    // and get it back from stack.
-                    cond = p.pop();
-                    p.now = n;
-                }
-
-                // apply the action
-                if (cond.bvalue()) {
-                    Trampoline.doeval(action.qvalue(),q);
-                    break;
-                }
+                            if (cond.type == Type.TQuote) {
+                                Cont ifcont = new Cont(cond.qvalue(),q.child(), c);
+                                c.n = p.now; // save the stack.
+                                c.top = Cond;
+                                return ifcont;
+                            } else {
+                                p.push(cond);
+                                c.n = p.now; // save the stack.
+                                c.top = Eval;
+                            }
+                            return c;
+                        } else {
+                            // exit out of the continuation of loop.
+                            return c.cont;
+                        }
+                    }
+                case Cond:
+                    {
+                        Term cond = p.pop(); // pop off the result.
+                        // restore the stack
+                        p.now = c.n;
+                        // push it back so that eval will find it.
+                        p.push(cond);
+                        c.top = Eval;
+                        return c;
+                    }
+                case Eval:
+                    {
+                        c.top = LStart;
+                        Term cond = p.pop(); // pop off the result.
+                        // dequote the action and push it to stack.
+                        if (cond.bvalue()) {
+                            Term action = (Term) c.store.get("if:action");
+                            Cont cont = new Cont(action.qvalue(),q.child(), c);
+                            return cont;
+                        }
+                        return c;
+                    }
+                case Exit:
+                default:
+                    return c.cont;
             }
+        }
+ 
+        public void eval(VFrame q) {
+            throw new VException("err:when:not-supported",null, " unexpected operation.");
         }
     };
 
