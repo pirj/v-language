@@ -1,0 +1,12 @@
+6.1.2008 rahul (309)
+	Adding continuations and Trampoline as a precursor.
+	green-threads/v/Cmd.java: add method to invoke trampoline
+	green-threads/v/V.java: change evaluation logic
+	green-threads/v/Trampoline.java: added trampolining logic
+	green-threads/v/Util.java: change doeval to trampoline class
+	green-threads/v/CmdQuote.java: remove doeval logic from this class
+	green-threads/v/Prologue.java: change _if to use trampoline method.
+	green-threads/v/Quote.java: remove eval as method.
+
+1.1.2008 rahul
+	baselined.
