@@ -6,7 +6,7 @@ import java.io.*;
 public class Util {
     public static void evaluate(String buff, VFrame q) {
         try {
-            getdef(buff).eval(q);
+            Trampoline.doeval(getdef(buff),q);
         } catch (Exception e) {
             throw new VException("err:eval", new Term<String>(Type.TString,buff), "eval failed " + e.getMessage());
         }

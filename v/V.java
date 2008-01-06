@@ -2,6 +2,8 @@ package v;
 
 import java.util.*;
 
+
+
 public class V {
     public static String version = "0.005";
 
@@ -16,6 +18,9 @@ public class V {
     public static void showtime(boolean val) {
         _showtime = val;
     }
+    public static void dofunction(VFrame scope) {
+    }
+
 
 
     public static void main(final String[] args) {
@@ -42,19 +47,24 @@ public class V {
                 public void dofunction(VFrame scope) {
                     if (interactive) {
                         try {
-                            super.dofunction(scope);
+                            V.dofunction(scope);
                         } catch (Exception e) {
                             outln(">" + e.getMessage());
                             frame.dump();
                             //frame.reinit();
                             V.debug(e);
                         }
-                    } else super.dofunction(scope);
+                    } else V.dofunction(scope);
                 }
             };
-            program.eval(frame.child()); // we save the original defs.
+            Trampoline.doeval(program,frame.child()); // we save the original defs.
+        } catch (VException e) {
+            outln(e.message());
+            frame.dump();
+            debug(e);
         } catch (Exception e) {
             outln(e.getMessage());
+            frame.dump();
             debug(e);
         }
         if (_showtime)
@@ -75,7 +85,7 @@ public class V {
     }
 
     public static void debug(Exception e) {
-        if (_debug)
+        //if (_debug)
             e.printStackTrace();
     }
     public static void debug(String s) {
