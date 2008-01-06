@@ -12,4 +12,9 @@ public abstract class Cmd implements Quote {
     public TokenStream tokens() {
         return null;
     }	
+
+    public abstract void eval(VFrame q);
+    public Cont trampoline(Cont c) {
+        return null;
+    }
 }

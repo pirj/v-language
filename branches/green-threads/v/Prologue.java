@@ -259,7 +259,7 @@ public class Prologue {
             CmdQuote qval = new CmdQuote(nts); 
 
             // now evaluate the entire thing on the current env.
-            qval.eval(q);
+            Trampoline.doeval(qval,q);
 
             // and save the frame in our parents namespace.
             Term<VFrame> f = new Term<VFrame>(Type.TFrame, q);
@@ -424,10 +424,10 @@ public class Prologue {
                 Term c = p.pop();
                 Term expr = p.pop();
                 try {
-                    expr.qvalue().eval(q);
+                    Trampoline.doeval(expr.qvalue(),q);
                 } catch (VException ve) {
                     p.push((Term)ve.token());
-                    c.qvalue().eval(q);
+                    Trampoline.doeval(c.qvalue(),q);
                 }
             }
     };
@@ -475,23 +475,62 @@ public class Prologue {
 
     // Control structures
     static Cmd _if = new Cmd() {
-        public void eval(VFrame q) {
+        final int Start=0,Cond=1,Eval=2,Exit=3;
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
+            switch (c.top) {
+                case Start:
+                    {
+                        Term action = p.pop();
+                        Term cond = p.pop();
+                        c.store.put("if:action", action);
 
-            Term action = p.pop();
-            Term cond = p.pop();
-
-            if (cond.type == Type.TQuote) {
-                Node<Term> n = p.now;
-                cond.qvalue().eval(q);
-                // and get it back from stack.
-                cond = p.pop();
-                p.now = n;
+                        if (cond.type == Type.TQuote) {
+                            Cont ifcont = new Cont(cond.qvalue().tokens().iterator(),
+                                    q.child(), c);
+                            c.n = p.now; // save the stack.
+                            c.top = Cond;
+                            return ifcont;
+                        } else {
+                            p.push(cond);
+                            c.n = p.now; // save the stack.
+                            c.top = Eval;
+                        }
+                        return c;
+                    }
+                case Cond:
+                    {
+                        Term cond = p.pop(); // pop off the result.
+                        // restore the stack
+                        p.now = c.n;
+                        // push it back so that eval will find it.
+                        p.push(cond);
+                        c.top = Eval;
+                        return c;
+                    }
+                case Eval:
+                    {
+                        c.top = Exit;
+                        Term cond = p.pop(); // pop off the result.
+                        // dequote the action and push it to stack.
+                        if (cond.bvalue()) {
+                            Term action = (Term) c.store.get("if:action");
+                            Cont cont = new Cont(action.qvalue().tokens().iterator(),
+                                    q.child(), c);
+                            return cont;
+                        }
+                        return c;
+                    }
+                case Exit:
+                default:
+                        // discard our continuation and return the parent.
+                        return c.cont;
             }
+        }
 
-            // dequote the action and push it to stack.
-            if (cond.bvalue())
-                action.qvalue().eval(q);
+        public void eval(VFrame q) {
+            throw new VException("err:if:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -510,7 +549,7 @@ public class Prologue {
 
                 if (cond.type == Type.TQuote) {
                     Node<Term> n = p.now;
-                    cond.qvalue().eval(q);
+                    Trampoline.doeval(cond.qvalue(),q);
                     // and get it back from stack.
                     cond = p.pop();
                     p.now = n;
@@ -518,7 +557,7 @@ public class Prologue {
 
                 // apply the action
                 if (cond.bvalue()) {
-                    action.qvalue().eval(q);
+                    Trampoline.doeval(action.qvalue(),q);
                     break;
                 }
             }
@@ -551,16 +590,16 @@ public class Prologue {
 
             if (cond.type == Type.TQuote) {
                 Node<Term> n = p.now;
-                cond.qvalue().eval(q);
+                Trampoline.doeval(cond.qvalue(),q);
                 // and get it back from stack.
                 cond = p.pop();
                 p.now = n;
             }
             // dequote the action and push it to stack.
             if (cond.bvalue())
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
             else
-                eaction.qvalue().eval(q);
+                Trampoline.doeval(eaction.qvalue(),q);
         }
     };
 
@@ -573,14 +612,14 @@ public class Prologue {
             while(true) {
                 if (cond.type == Type.TQuote) {
                     Node<Term> n = p.now;
-                    cond.qvalue().eval(q);
+                    Trampoline.doeval(cond.qvalue(),q);
                     // and get it back from stack.
                     cond = p.pop();
                     p.now = n;
                 }
                 // dequote the action and push it to stack.
                 if (cond.bvalue())
-                    action.qvalue().eval(q);
+                    Trampoline.doeval(action.qvalue(),q);
                 else
                     break;
             }
@@ -679,7 +718,7 @@ public class Prologue {
                 // apply the action
                 // We dont do the walk here since the action is in the form of a quote.
                 // we will have to dequote it, and walk one by one if we are to do this.
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
             }
         }
     };
@@ -706,7 +745,7 @@ public class Prologue {
                 // apply the action
                 // We dont do the walk here since the action is in the form of a quote.
                 // we will have to dequote it, and walk one by one if we are to do this.
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
                 // pop it back into a new quote
                 Term res = p.pop();
                 nts.add(res);
@@ -738,7 +777,7 @@ public class Prologue {
                 // apply the action
                 // We dont do the walk here since the action is in the form of a quote.
                 // we will have to dequote it, and walk one by one if we are to do this.
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
                 // pop it back into a new quote
                 Term res = p.pop();
                 p.now = n;
@@ -769,7 +808,7 @@ public class Prologue {
                 // apply the action
                 // We dont do the walk here since the action is in the form of a quote.
                 // we will have to dequote it, and walk one by one if we are to do this.
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
                 // pop it back into a new quote
                 Term res = p.pop();
                 if (res.bvalue())
@@ -804,7 +843,7 @@ public class Prologue {
                 // apply the action
                 // We dont do the walk here since the action is in the form of a quote.
                 // we will have to dequote it, and walk one by one if we are to do this.
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
                 // pop it back into a new quote
                 Term res = p.pop();
                 p.now = n;
@@ -838,7 +877,7 @@ public class Prologue {
                 // apply the action
                 // We dont do the walk here since the action is in the form of a quote.
                 // we will have to dequote it, and walk one by one if we are to do this.
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
                 // pop it back into a new quote
                 Term res = p.pop();
                 if (res.bvalue())
@@ -869,7 +908,7 @@ public class Prologue {
                 // apply the action
                 // We dont do the walk here since the action is in the form of a quote.
                 // we will have to dequote it, and walk one by one if we are to do this.
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
                 // pop it back into a new quote
                 Term res = p.pop();
                 p.now = n;
@@ -899,7 +938,7 @@ public class Prologue {
                 // push it on our current stack
                 p.push(t);
                 // apply the action
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
             }
             Term res = p.pop();
             p.push(res);
@@ -927,7 +966,7 @@ public class Prologue {
                 // push it on our current stack
                 p.push(t);
                 // apply the action
-                action.qvalue().eval(q);
+                Trampoline.doeval(action.qvalue(),q);
             }
             Term res = p.pop();
             p.now = n;
@@ -1026,7 +1065,7 @@ public class Prologue {
             VStack p = q.stack();
 
             Term prog = p.pop();
-            prog.qvalue().eval(q.parent()); // apply on parent
+            Trampoline.doeval(prog.qvalue(),q.parent()); // apply on parent
         }
     };
 
@@ -1036,7 +1075,7 @@ public class Prologue {
 
             Term prog = p.pop();
             Term env = p.pop();
-            prog.qvalue().eval(env.fvalue()); // apply on parent
+            Trampoline.doeval(prog.qvalue(),env.fvalue()); // apply on parent
         }
     };
 
@@ -1291,7 +1330,7 @@ public class Prologue {
                         String chars = Util.getresource(val);
                         CharStream cs = chars == null? new FileCharStream(val) : new BuffCharStream(chars);
                         CmdQuote module = new CmdQuote(new LexStream(cs));
-                        module.eval(q.parent());
+                        Trampoline.doeval(module,q.parent());
                     }
                 } else {
                     String val = file.svalue() + ".v";
@@ -1299,7 +1338,7 @@ public class Prologue {
                     String chars = Util.getresource(val);
                     CharStream cs = chars == null? new FileCharStream(val) : new BuffCharStream(chars);
                     CmdQuote module = new CmdQuote(new LexStream(cs));
-                    module.eval(q.parent());
+                    Trampoline.doeval(module,q.parent());
                 }
                 V.debug("use @ " + q.id());
             } catch (VException e) {
@@ -1326,7 +1365,7 @@ public class Prologue {
                         String chars = Util.getresource(val);
                         CharStream cs = chars == null? new FileCharStream(val) : new BuffCharStream(chars);
                         CmdQuote module = new CmdQuote(new LexStream(cs));
-                        module.eval(env.fvalue());
+                        Trampoline.doeval(module,env.fvalue());
                     }
                 } else {
                     String val = file.svalue() + ".v";
@@ -1334,7 +1373,7 @@ public class Prologue {
                     String chars = Util.getresource(val);
                     CharStream cs = chars == null? new FileCharStream(val) : new BuffCharStream(chars);
                     CmdQuote module = new CmdQuote(new LexStream(cs));
-                    module.eval(env.fvalue());
+                    Trampoline.doeval(module,env.fvalue());
                 }
                 V.debug("use @ " + q.id());
             } catch (VException e) {
@@ -1514,7 +1553,7 @@ public class Prologue {
         iframe.def(".time!", _time);
 
         Quote libs = Util.getdef("'std' use");
-        libs.eval(iframe);
+        Trampoline.doeval(libs,iframe);
     }
 }
 
