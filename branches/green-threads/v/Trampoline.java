@@ -20,32 +20,52 @@ class Cont {
     // the below should go off TODO:.
     Token sym;
     Quote quote;
+    Quote cmd;
     
     HashMap<String,Object> store = new HashMap<String,Object>();
     Node<Term> n;
-    public Cont(Iterator<Term> s, VFrame f, Cont n) {
-        stream = s;
+    public Cont(Quote q, VFrame f, Cont n) {
         scope = f;
         cont = n;
         op = Op.OpEval;
+        // TODO: remove quote.
+        quote = q;
+        cmd = q;
+        if (quote.tokens() != null)
+            stream = quote.tokens().iterator();
+        else 
+            stream = null;
         sym = null;
-        quote = null;
         n = null;
         top = 0;
+    }
+    public boolean hasNext() {
+        if (stream == null)
+            return false;
+        return stream.hasNext();
+    }
+
+    public Term next() {
+        if (stream == null)
+            return null;
+        return stream.next();
     }
 }
 
 public class Trampoline {
     public static void doeval(Quote q, VFrame scope) {
-        Cont now = new Cont(q.tokens().iterator(),scope, null);
+        Cont now = new Cont(q,scope, null);
         while(now != null) {
             switch (now.op) {
                 case OpEval:
                     now = do_one(now);
                     break;
                 case OpCmd:
-                    if (now.sym.value().equals("if")) {
-                        now = ((Cmd)now.quote).trampoline(now);
+                    if (
+                            now.sym.value().equals("if") ||
+                            now.sym.value().equals("when")
+                       ) {
+                        now = ((Cmd)now.cmd).trampoline(now);
                     } else {
                         ((Cmd)now.quote).eval(now.scope.child());
                         now = now.cont;
@@ -76,11 +96,11 @@ public class Trampoline {
     }
 
     public static Cont do_one(Cont c) {
-        if(!c.stream.hasNext()) {
+        if(!c.hasNext()) {
             return c.cont;
         }
         VStack stack = c.scope.stack();
-        stack.push(c.stream.next());
+        stack.push(c.next());
         // if we cant do it, then return ourselves.
         if (!cando(stack)) {
             return c;
@@ -93,16 +113,16 @@ public class Trampoline {
         try {
             // is that a Cmd?
             if (mq instanceof v.Cmd) {
-                Cont cnew = new Cont(c.stream, c.scope, c);
+                Cont cnew = new Cont(mq, c.scope, c);
+
                 // TODO: the below should go away.
                 cnew.sym = sym;
-                cnew.quote = mq;
 
                 cnew.op = Op.OpCmd;
                 return cnew;
             } else {
                 // else return a continuation
-                return new Cont(mq.tokens().iterator(), c.scope.child() , c);
+                return new Cont(mq, c.scope.child() , c);
             }
         } catch (VException e) {
             e.addLine(sym.value());
