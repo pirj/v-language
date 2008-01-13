@@ -1,4 +1,10 @@
 13.1.2008 rahul
+	scripts/test.v: add while tests
+	v/V.java: switch exception printing on (for now)
+	v/Trampoline.java: added ifte, and while
+	v/VException.java: add getMessage wrapper
+	v/Prologue.java: changed ifte and while.
+13.1.2008 rahul
 	Changing defmodule
 	green-threads/v/Trampoline.java
 	green-threads/v/Prologue.java
