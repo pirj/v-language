@@ -59,11 +59,11 @@ public class V {
             };
             Trampoline.doeval(program,frame.child()); // we save the original defs.
         } catch (VException e) {
-            outln(e.message());
+            outln(">" + e.message());
             frame.dump();
             debug(e);
         } catch (Exception e) {
-            outln(e.getMessage());
+            outln("*>" + e.getMessage());
             frame.dump();
             debug(e);
         }
@@ -85,8 +85,10 @@ public class V {
     }
 
     public static void debug(Exception e) {
-        //if (_debug)
+        //if (_debug) {
+            outln(e.getMessage());
             e.printStackTrace();
+        //}
     }
     public static void debug(String s) {
         if (_debug) outln(s);

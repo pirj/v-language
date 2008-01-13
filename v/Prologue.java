@@ -244,40 +244,40 @@ public class Prologue {
                 case Start:
                     {
                         Term t = p.pop();
+
                         Map.Entry<String, CmdQuote> entry = splitdef(t.qvalue());
                         String module = entry.getKey();
+                        c.store.put("defmodule:module", module);
                         CmdQuote qfull = entry.getValue();
-                        c.store.put("module:name", module);
 
                         // split it again to get exported defs. 
                         Iterator<Term> it = (Iterator<Term>)qfull.tokens().iterator();
                         Quote pub = it.next().qvalue();
-                        c.store.put("module:pub", pub);
+                        c.store.put("defmodule:pub", pub);
 
                         QuoteStream nts = new QuoteStream();
                         while (it.hasNext())
                             nts.add(it.next());
 
-                        // making sure that we come back.
                         c.top = Eval;
-
+                        CmdQuote qval = new CmdQuote(nts); 
                         // we define it on the enclosing scope.
                         // so our new command's parent is actually q rather than
                         // parent.
-                        return new Cont(new CmdQuote(nts),q, c);
+                        Cont cont = new Cont(qval,q, c);
+                        return cont;
                     }
                 case Eval:
                     {
-                        String module = (String) c.store.get("module:name");
-                        c.top = Exit; // make sure that we exit once we finish the loop.
-                        // save the frame in our parents namespace.
+                        Quote pub = (Quote) c.store.get("defmodule:pub");
+                        String module = (String) c.store.get("defmodule:module");
+                        // and save the frame in our parents namespace.
                         Term<VFrame> f = new Term<VFrame>(Type.TFrame, q);
                         QuoteStream fts = new QuoteStream();
                         fts.add(f);
                         V.debug("Def :" + module + "@" + q.parent().id());
                         q.parent().def('$' + module, new CmdQuote(fts));
 
-                        Quote pub = (Quote) c.store.get("module:pub");
                         // now bind all the published tokens to our parent namespace.
                         Iterator <Term> i = pub.tokens().iterator();
                         while(i.hasNext()) {
@@ -286,11 +286,13 @@ public class Prologue {
                             Quote libs = Util.getdef('$' + module + '[' + s + "] &i");
                             q.parent().def(module + ':' + s ,libs);
                         }
+                        c.top = Exit;
                         return c;
                     }
                 case Exit:
                 default:
-                    return c.cont;
+                        // discard our continuation and return the parent.
+                        return c.cont;
             }
         }
 
@@ -643,48 +645,138 @@ public class Prologue {
 
 
     static Cmd _ifte = new Cmd() {
-        public void eval(VFrame q) {
+        final int Start=0,Cond=1,Eval=2,Exit=3;
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
+            switch (c.top) {
+                case Start:
+                    {
+                        Term eaction = p.pop();
+                        Term action = p.pop();
+                        Term cond = p.pop();
+                        c.store.put("if:action", action);
+                        c.store.put("if:eaction", eaction);
 
-            Term eaction = p.pop();
-            Term action = p.pop();
-            Term cond = p.pop();
-
-            if (cond.type == Type.TQuote) {
-                Node<Term> n = p.now;
-                Trampoline.doeval(cond.qvalue(),q);
-                // and get it back from stack.
-                cond = p.pop();
-                p.now = n;
+                        if (cond.type == Type.TQuote) {
+                            Cont ifcont = new Cont(cond.qvalue(),q.child(), c);
+                            c.n = p.now; // save the stack.
+                            c.top = Cond;
+                            return ifcont;
+                        } else {
+                            p.push(cond);
+                            c.n = p.now; // save the stack.
+                            c.top = Eval;
+                        }
+                        return c;
+                    }
+                case Cond:
+                    {
+                        Term cond = p.pop(); // pop off the result.
+                        // restore the stack
+                        p.now = c.n;
+                        // push it back so that eval will find it.
+                        p.push(cond);
+                        c.top = Eval;
+                        return c;
+                    }
+                case Eval:
+                    {
+                        c.top = Exit;
+                        Term cond = p.pop(); // pop off the result.
+                        // dequote the action and push it to stack.
+                        if (cond.bvalue()) {
+                            Term action = (Term) c.store.get("if:action");
+                            return new Cont(action.qvalue(),q.child(), c);
+                        } else {
+                            Term action = (Term) c.store.get("if:eaction");
+                            return new Cont(action.qvalue(),q.child(), c);
+                        }
+                    }
+                case Exit:
+                default:
+                        // discard our continuation and return the parent.
+                        return c.cont;
             }
-            // dequote the action and push it to stack.
-            if (cond.bvalue())
-                Trampoline.doeval(action.qvalue(),q);
-            else
-                Trampoline.doeval(eaction.qvalue(),q);
+        }
+
+        public void eval(VFrame q) {
+            throw new VException("err:ifte:not-supported",null, " unexpected operation.");
         }
     };
 
     static Cmd _while = new Cmd() {
-        public void eval(VFrame q) {
-            VStack p = q.stack();
 
-            Term action = p.pop();
-            Term cond = p.pop();
-            while(true) {
-                if (cond.type == Type.TQuote) {
-                    Node<Term> n = p.now;
-                    Trampoline.doeval(cond.qvalue(),q);
-                    // and get it back from stack.
-                    cond = p.pop();
-                    p.now = n;
-                }
-                // dequote the action and push it to stack.
-                if (cond.bvalue())
-                    Trampoline.doeval(action.qvalue(),q);
-                else
-                    break;
+        final int Start=0,LStart=1,Cond=2,Eval=3,Exit=4;
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            switch (c.top) {
+                case Start:
+                    {
+                        Term action = p.pop();
+                        Term cond = p.pop();
+
+                        Cont cont = new Cont(c.quote,c.scope, c);
+                        // making sure that we come back.
+                        cont.sym = c.sym;
+                        cont.cmd = c.cmd;
+                        cont.op = c.op;
+                        cont.top = LStart;
+                        cont.store.put("while:action", action);
+                        cont.store.put("while:cond", cond);
+
+                        c.top = Exit; // make sure that we exit once we finish the loop.
+                        return cont;
+
+                    }
+                case LStart:
+                    {
+                        Term cond = (Term) c.store.get("while:cond");
+                        if (cond.type == Type.TQuote) {
+                            Cont ifcont = new Cont(cond.qvalue(),q.child(), c);
+                            c.n = p.now; // save the stack.
+                            c.top = Cond;
+                            return ifcont;
+                        } else {
+                            p.push(cond);
+                            c.n = p.now; // save the stack.
+                            c.top = Eval;
+                        }
+                        return c;
+                    }
+                case Cond:
+                    {
+                        Term cond = p.pop(); // pop off the result.
+                        // restore the stack
+                        p.now = c.n;
+                        // push it back so that eval will find it.
+                        p.push(cond);
+                        c.top = Eval;
+                        return c;
+                    }
+                case Eval:
+                    {
+                        Term cond = p.pop(); // pop off the result.
+                        // dequote the action and push it to stack.
+                        if (cond.bvalue()) {
+                            Term action = (Term) c.store.get("while:action");
+                            Cont cont = new Cont(action.qvalue(),q.child(), c);
+                            c.top = LStart;
+                            return cont;
+                        }
+                        c.top = Exit;
+                        return c;
+                    }
+                case Exit:
+                default:
+                        // discard our continuation and return the parent.
+                        return c.cont;
             }
+        }
+
+        public void eval(VFrame q) {
+            throw new VException("err:while:not-supported",null, " unexpected operation.");
         }
     };
 
