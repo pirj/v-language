@@ -63,7 +63,8 @@ public class Trampoline {
                 case OpCmd:
                     if (
                             now.sym.value().equals("if") ||
-                            now.sym.value().equals("when")
+                            now.sym.value().equals("when") ||
+                            now.sym.value().equals("module")
                        ) {
                         now = ((Cmd)now.cmd).trampoline(now);
                     } else {

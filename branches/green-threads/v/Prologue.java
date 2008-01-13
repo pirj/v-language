@@ -236,47 +236,66 @@ public class Prologue {
     };
 
     static Cmd _defmodule = new Cmd() {
-        public void eval(VFrame q) {
-            // eval is passed in the quote representing the current scope.
+        final int Start=0,Eval=1,Exit=2;
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
-            Term t = p.pop();
+            switch (c.top) {
+                case Start:
+                    {
+                        Term t = p.pop();
+                        Map.Entry<String, CmdQuote> entry = splitdef(t.qvalue());
+                        String module = entry.getKey();
+                        CmdQuote qfull = entry.getValue();
+                        c.store.put("module:name", module);
 
-            Map.Entry<String, CmdQuote> entry = splitdef(t.qvalue());
-            String module = entry.getKey();
-            CmdQuote qfull = entry.getValue();
+                        // split it again to get exported defs. 
+                        Iterator<Term> it = (Iterator<Term>)qfull.tokens().iterator();
+                        Quote pub = it.next().qvalue();
+                        c.store.put("module:pub", pub);
 
-            // split it again to get exported defs. 
-            Iterator<Term> it = (Iterator<Term>)qfull.tokens().iterator();
-            Quote pub = it.next().qvalue();
+                        QuoteStream nts = new QuoteStream();
+                        while (it.hasNext())
+                            nts.add(it.next());
 
-            QuoteStream nts = new QuoteStream();
-            while (it.hasNext())
-                nts.add(it.next());
+                        // making sure that we come back.
+                        c.top = Eval;
 
-            // we define it on the enclosing scope.
-            // so our new command's parent is actually q rather than
-            // parent.
-            CmdQuote qval = new CmdQuote(nts); 
+                        // we define it on the enclosing scope.
+                        // so our new command's parent is actually q rather than
+                        // parent.
+                        return new Cont(new CmdQuote(nts),q, c);
+                    }
+                case Eval:
+                    {
+                        String module = (String) c.store.get("module:name");
+                        c.top = Exit; // make sure that we exit once we finish the loop.
+                        // save the frame in our parents namespace.
+                        Term<VFrame> f = new Term<VFrame>(Type.TFrame, q);
+                        QuoteStream fts = new QuoteStream();
+                        fts.add(f);
+                        V.debug("Def :" + module + "@" + q.parent().id());
+                        q.parent().def('$' + module, new CmdQuote(fts));
 
-            // now evaluate the entire thing on the current env.
-            Trampoline.doeval(qval,q);
-
-            // and save the frame in our parents namespace.
-            Term<VFrame> f = new Term<VFrame>(Type.TFrame, q);
-            QuoteStream fts = new QuoteStream();
-            fts.add(f);
-            V.debug("Def :" + module + "@" + q.parent().id());
-            q.parent().def('$' + module, new CmdQuote(fts));
-
-            // now bind all the published tokens to our parent namespace.
-            Iterator <Term> i = pub.tokens().iterator();
-            while(i.hasNext()) {
-                // look up their bindings and rebind it to parents.
-                String s = i.next().value();
-                Quote libs = Util.getdef('$' + module + '[' + s + "] &i");
-                q.parent().def(module + ':' + s ,libs);
+                        Quote pub = (Quote) c.store.get("module:pub");
+                        // now bind all the published tokens to our parent namespace.
+                        Iterator <Term> i = pub.tokens().iterator();
+                        while(i.hasNext()) {
+                            // look up their bindings and rebind it to parents.
+                            String s = i.next().value();
+                            Quote libs = Util.getdef('$' + module + '[' + s + "] &i");
+                            q.parent().def(module + ':' + s ,libs);
+                        }
+                        return c;
+                    }
+                case Exit:
+                default:
+                    return c.cont;
             }
+        }
 
+        public void eval(VFrame q) {
+            throw new VException("err:module:not-supported",null, " unexpected operation.");
         }
     };
 
