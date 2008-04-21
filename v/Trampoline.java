@@ -4,7 +4,8 @@ import java.util.*;
 enum Op {
     OpExit,
     OpEval,
-    OpCmd
+    OpCmd,
+    OpX
 };
 
 class Cont {
@@ -21,6 +22,8 @@ class Cont {
     Token sym;
     Quote quote;
     Quote cmd;
+
+    VException e;
     
     HashMap<String,Object> store = new HashMap<String,Object>();
     Node<Term> n;
@@ -66,12 +69,34 @@ public class Trampoline {
                             now.sym.value().equals("if") ||
                             now.sym.value().equals("ifte") ||
                             now.sym.value().equals("while") ||
-                            now.sym.value().equals("when")
+                            now.sym.value().equals("when") ||
+                            now.sym.value().equals("catch") ||
+                            now.sym.value().equals("throw")
                        ) {
                         now = ((Cmd)now.cmd).trampoline(now);
                     } else {
                         ((Cmd)now.quote).eval(now.scope.child());
                         now = now.cont;
+                    }
+                    break;
+                case OpX:
+                    if (now.sym == null) { // enclosing quote
+                        // is now available?
+                        if (now.cont == null)
+                            throw now.e;
+                        now.cont.e = now.e;
+                        now = now.cont;
+                        now.op = Op.OpX;
+                    } else if( now.sym.value().equals("catch")) {
+                        now.op = Op.OpCmd;
+                        now.e.addLine(now.sym.value());
+                    } else { // throw
+                        // save e
+                        VException e = now.e;
+                        e.addLine(now.sym.value());
+                        now = now.cont;
+                        now.e = e;
+                        now.op = Op.OpX;
                     }
                     break;
                 case OpExit:
@@ -129,7 +154,11 @@ public class Trampoline {
             }
         } catch (VException e) {
             e.addLine(sym.value());
-            throw e;
+            Cont cx = new Cont(mq, c.scope, c);
+            cx.sym = sym;
+            cx.op = Op.OpX;
+            cx.e = e;
+            return cx;
         }
     }
 }

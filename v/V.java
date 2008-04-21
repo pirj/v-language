@@ -18,8 +18,6 @@ public class V {
     public static void showtime(boolean val) {
         _showtime = val;
     }
-    public static void dofunction(VFrame scope) {
-    }
 
 
 
@@ -31,8 +29,8 @@ public class V {
         final boolean interactive = args.length == 0 ? true : false;
         // Setup the world quote.
 
-        Prologue.init(frame);
         try {
+            Prologue.init(frame);
             // do we have any args?
             CharStream cs = null;
             if (args.length > 0) {
@@ -43,33 +41,23 @@ public class V {
                 cs = new ConsoleCharStream();
             }
 
-            CmdQuote program = new CmdQuote(new LexStream(cs)) {
-                public void dofunction(VFrame scope) {
-                    if (interactive) {
-                        try {
-                            V.dofunction(scope);
-                        } catch (Exception e) {
-                            outln(">" + e.getMessage());
-                            frame.dump();
-                            //frame.reinit();
-                            V.debug(e);
-                        }
-                    } else V.dofunction(scope);
-                }
-            };
-            Trampoline.doeval(program,frame.child()); // we save the original defs.
-        } catch (VException e) {
-            outln(">" + e.message());
-            frame.dump();
-            debug(e);
+            CmdQuote program = new CmdQuote(new LexStream(cs));
+            do {
+                try {
+                    Trampoline.doeval(program,frame.child()); // we save the original defs.
+                } catch (VException e) {
+                    outln(">" + e.message());
+                    frame.dump();
+                    //debug(e);
+                } 
+            } while (interactive);
+            if (_showtime)
+                outln("time: " + (System.currentTimeMillis() - start));
         } catch (Exception e) {
             outln("*>" + e.getMessage());
             frame.dump();
             debug(e);
         }
-        if (_showtime)
-            outln("time: " + (System.currentTimeMillis() - start));
-
     }
 
     public static void outln(String var) {

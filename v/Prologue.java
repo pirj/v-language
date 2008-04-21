@@ -438,25 +438,46 @@ public class Prologue {
     };
 
     static Cmd _catch = new Cmd() {
-        @SuppressWarnings("unchecked")
-            public void eval(VFrame q) {
-                // eval is passed in the quote representing the current scope.
-                VStack p = q.stack();
-                Term c = p.pop();
-                Term expr = p.pop();
-                try {
-                    Trampoline.doeval(expr.qvalue(),q);
-                } catch (VException ve) {
-                    p.push((Term)ve.token());
-                    Trampoline.doeval(c.qvalue(),q);
-                }
+        final int Start=0,Throw=1;
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            switch (c.top) {
+                case Start: 
+                    {
+                        Term cexpr = p.pop();
+                        Term texpr = p.pop();
+                        Cont cont = new Cont(texpr.qvalue(), q.child(), c);
+                        c.top = Throw;
+                        c.store.put("catch:expr", cexpr);
+                        return cont;
+                    }
+                case Throw:
+                default:
+                    {
+                        Term cexpr = (Term) c.store.get("catch:expr");
+                        Cont cont = new Cont(cexpr.qvalue(), q.child(), c.cont);
+                        return cont;
+                    }
             }
+        }
+        public void eval(VFrame q) {
+            throw new VException("err:catch:not-supported",null, " unexpected operation.");
+        }
     };
 
     static Cmd _throw = new Cmd() {
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            Term t = q.stack().peek();
+            c.op = Op.OpX;
+            c.e = new VException("err:throw", t, t.value());
+            return c;
+        }
+
         public void eval(VFrame q) {
-            Term t = q.stack().pop();
-            throw new VException("err:throw", t, t.value());
+            throw new VException("err:throw:not-supported",null, " unexpected operation.");
         }
     };
 
