@@ -6,6 +6,7 @@ public class VFrame {
     VStack _stack = null;
     HashMap<String, Quote> _dict = new HashMap<String,Quote>();
     VFrame _parent = null;
+    VFrame Top = null;
 
     public HashMap<String,Quote> dict() {
         return _dict;
@@ -15,7 +16,7 @@ public class VFrame {
     int _id;
 
     public String id() {
-        return "Frame[" + _id + "]";
+        return "[" + _id + "]";
     }
 
     public VFrame() {
@@ -23,6 +24,7 @@ public class VFrame {
         _stack = new VStack();
         _idcount++;
         _id = _idcount;
+        Top=this;
     }
     private VFrame(VFrame parent) {
         _parent = parent;
@@ -45,6 +47,7 @@ public class VFrame {
         _dict.put(s,q);
     }
     public VFrame parent() {
+        if (_parent == null) return Top; // TODO: see if this is the right decision.
         return _parent;
     }
     public VFrame child() {
@@ -58,5 +61,8 @@ public class VFrame {
     }
     public void reinit() {
         _stack.clear();
+    }
+    public String toString() {
+        return "[frame:"+_id + "]";
     }
 }

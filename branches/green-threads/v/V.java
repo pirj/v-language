@@ -24,13 +24,17 @@ public class V {
     public static void main(final String[] args) {
         long start = System.currentTimeMillis();
         final VFrame frame = new VFrame(); // our frame chain.
-        for(String s : args)
-            frame.stack().push(new Term<String>(Type.TString, s));
         final boolean interactive = args.length == 0 ? true : false;
         // Setup the world quote.
 
         try {
-            Prologue.init(frame);
+            Cont c = Prologue.init(frame);
+
+            for(String s : args)
+                frame.stack().push(new Term<String>(Type.TString, s));
+
+            Trampoline.cont(c);
+
             // do we have any args?
             CharStream cs = null;
             if (args.length > 0) {
@@ -42,9 +46,10 @@ public class V {
             }
 
             CmdQuote program = new CmdQuote(new LexStream(cs));
+            c = new Cont(program, frame.child(), null); // we save the original defs.
             do {
                 try {
-                    Trampoline.doeval(program,frame.child()); // we save the original defs.
+                    Trampoline.cont(c);
                 } catch (VException e) {
                     outln(">" + e.message());
                     frame.dump();
