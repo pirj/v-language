@@ -18,7 +18,7 @@ public abstract class Token {
             Term<Character> v = (Term<Character>)this;
             return v.val;
         } catch (Exception e) {
-            throw new VException("err:type:bool",this,"Invalid type(need bool)");
+            throw new VException("err:type:bool",this,"Invalid type(need char)");
         }
     }
     public int ivalue() {

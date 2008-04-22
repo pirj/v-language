@@ -58,21 +58,27 @@ class Cont {
 public class Trampoline {
     public static void doeval(Quote q, VFrame scope) {
         Cont now = new Cont(q,scope, null);
+        cont(now);
+    }
+
+    public static void cont(Cont now) {
         while(now != null) {
             switch (now.op) {
                 case OpEval:
                     now = do_one(now);
                     break;
                 case OpCmd:
-                    if (
-                            now.sym.value().equals("module") ||
-                            now.sym.value().equals("if") ||
-                            now.sym.value().equals("ifte") ||
-                            now.sym.value().equals("while") ||
-                            now.sym.value().equals("when") ||
-                            now.sym.value().equals("catch") ||
-                            now.sym.value().equals("throw")
-                       ) {
+                    if (!(
+                            now.sym.value().equals("step") ||
+                            now.sym.value().equals("map") ||
+                            now.sym.value().equals("map!") ||
+                            now.sym.value().equals("split!") ||
+                            now.sym.value().equals("split") ||
+                            now.sym.value().equals("filter") ||
+                            now.sym.value().equals("filter!") ||
+                            now.sym.value().equals("fold") ||
+                            now.sym.value().equals("fold!")
+                       )) {
                         now = ((Cmd)now.cmd).trampoline(now);
                     } else {
                         ((Cmd)now.quote).eval(now.scope.child());
@@ -88,9 +94,10 @@ public class Trampoline {
                         now = now.cont;
                         now.op = Op.OpX;
                     } else if( now.sym.value().equals("catch")) {
-                        now.op = Op.OpCmd;
+                        now.op = Op.OpCmd; // return to evaluation, but this time we go for the catch clause.
                         now.e.addLine(now.sym.value());
-                    } else { // throw
+                    } else { // should not come here.
+                        System.out.println("Some thing bad happened at OpX");
                         // save e
                         VException e = now.e;
                         e.addLine(now.sym.value());
