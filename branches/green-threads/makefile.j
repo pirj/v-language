@@ -12,6 +12,9 @@ run:
 test:
 	cd pkg && java -jar v.jar ../scripts/test.v
 
+ctest:
+	cd pkg && java -jar v.jar ../scripts/ctest.v
+
 release: all test
 	rm -rf pkg/v_$(RELEASE)
 	mkdir pkg/v_$(RELEASE)
