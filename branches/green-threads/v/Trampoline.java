@@ -8,6 +8,31 @@ enum Op {
     OpX
 };
 
+class MsgBox {
+    Node<Term> first = null;
+    Node<Term> lastmsg = null;
+
+    MsgBox() {
+    }
+
+    Term getmsg() {
+        if (first == null) return null;
+        Term m = first.data;
+        first = first.link;
+        return m;
+    }
+
+    void sendmsg(Term m) {
+        Node<Term> cur = new Node<Term>(m);
+        if (first == null) {
+            first = cur;
+        } else {
+            lastmsg.link = cur;
+        }
+        lastmsg = cur;
+    }
+}
+
 class Cont {
     public Iterator<Term> stream;
     public VFrame scope;
@@ -22,13 +47,11 @@ class Cont {
     Token sym;
     Quote quote;
     Quote cmd;
+    MsgBox msg;
 
-    Node<Term> msg = new Node<Term>(null);
-    Node<Term> lastmsg = msg;
     
     void initmsg() {
-        msg = new Node<Term>(null);
-        lastmsg = msg;
+        msg = new MsgBox();
     }
 
     VException e;
@@ -36,8 +59,6 @@ class Cont {
 
     HashMap<String,Object> store = new HashMap<String,Object>();
     Node<Term> n;
-    int pid =0;
-    static int ipid;
     public Cont(Quote q, VFrame f, Cont n) {
         scope = f;
         cont = n;
@@ -56,28 +77,18 @@ class Cont {
             id = cont.id;
             msg = cont.msg;
         }
-        ipid++;
-        pid=ipid;
     }
 
     Term getmsg() {
-        Node<Term> cur = msg.link; // get the original one.
-        if (cur == null) return null;
-        msg.link = cur.link;
-        return cur.data;
+        return msg.getmsg();
     }
 
     void sendmsg(Term m) {
-        Node<Term> cur = new Node<Term>(m);
-        if (msg.link == null) {
-            msg.link = cur;
-        }
-        lastmsg.link = cur;
-        lastmsg = lastmsg.link;
+        msg.sendmsg(m);
     }
 
     public String toString() {
-        return "[cont:"+id+" " +pid + "]";
+        return "[cont:"+id+"]";
     }
 
     public boolean hasNext() {
