@@ -23,13 +23,21 @@ class Cont {
     Quote quote;
     Quote cmd;
 
-    Term msg;
+    Node<Term> msg = new Node<Term>(null);
+    Node<Term> lastmsg = msg;
+    
+    void initmsg() {
+        msg = new Node<Term>(null);
+        lastmsg = msg;
+    }
 
     VException e;
     int id = 0;
-    
+
     HashMap<String,Object> store = new HashMap<String,Object>();
     Node<Term> n;
+    int pid =0;
+    static int ipid;
     public Cont(Quote q, VFrame f, Cont n) {
         scope = f;
         cont = n;
@@ -44,12 +52,32 @@ class Cont {
         sym = null;
         n = null;
         top = 0;
-        if (cont != null)
+        if (cont != null) {
             id = cont.id;
+            msg = cont.msg;
+        }
+        ipid++;
+        pid=ipid;
+    }
+
+    Term getmsg() {
+        Node<Term> cur = msg.link; // get the original one.
+        if (cur == null) return null;
+        msg.link = cur.link;
+        return cur.data;
+    }
+
+    void sendmsg(Term m) {
+        Node<Term> cur = new Node<Term>(m);
+        if (msg.link == null) {
+            msg.link = cur;
+        }
+        lastmsg.link = cur;
+        lastmsg = lastmsg.link;
     }
 
     public String toString() {
-        return "[cont:"+id+"]";
+        return "[cont:"+id+" " +pid + "]";
     }
 
     public boolean hasNext() {
@@ -71,6 +99,7 @@ public class Trampoline {
     public static void add(Cont c) {
         c.id = idcount;
         idcount++;
+        c.initmsg();
         active.add(c);
     }
 

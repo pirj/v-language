@@ -1855,11 +1855,11 @@ public class Prologue {
             VFrame q = c.scope;
             VStack p = q.stack();
             // If we got any thing, then push it, else return the same continuation.
-            if (c.msg == null)
+            Term msg = c.getmsg();
+           if (msg == null)
                 return c;
             else {
-                p.push(c.msg);
-                c.msg = null;
+                p.push(msg);
                 return c.cont;
             }
         }
@@ -1873,6 +1873,7 @@ public class Prologue {
             // create a new continuation, and push it into the currently executing continuations.
             // save the continuation in the stack.
             Cont cont = new Cont(f.qvalue(), q.clone(), c.cont);
+            cont.msg = null;
             Term<Cont> tc = new Term<Cont>(Type.TCont, cont);
             p.push(tc);
             Trampoline.add(cont);
@@ -1886,7 +1887,7 @@ public class Prologue {
             VStack p = q.stack();
             Term tc = p.pop();
             Term msg = p.pop();
-            tc.contvalue().msg = msg;
+            tc.contvalue().sendmsg(msg);
             return c.cont;
         }
     };
