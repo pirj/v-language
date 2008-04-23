@@ -852,16 +852,6 @@ public class Prologue {
         }
     };
 
-    static Cmd _println = new Cmd() {
-        public Cont trampoline(Cont c) {
-            VFrame q = c.scope;
-            VStack p = q.stack();
-            Term t = p.pop();
-            V.outln(t.value());
-            return c.cont;
-        }
-    };
-
     static Cmd _peek = new Cmd() {
         public Cont trampoline(Cont c) {
             VFrame q = c.scope;
@@ -1245,6 +1235,9 @@ public class Prologue {
             VStack p = q.stack();
 
             Term t = c.next();
+            Term res = p.pop();// save the result
+            p.now = (Node<Term>)c.store.get("fold:stack"); // and reset the stack
+            p.push(res);
             p.push(t);
             Term action = (Term)c.store.get("fold:action");
             Cont cont = new Cont(action.qvalue(), q, c);
@@ -1255,7 +1248,6 @@ public class Prologue {
             VFrame q = c.scope;
             VStack p = q.stack();
             Term res = p.pop();
-            p.now = (Node<Term>)c.store.get("fold:stack");
             p.push(res);
             return c.cont;
         }
@@ -1887,8 +1879,6 @@ public class Prologue {
 
         //io
         iframe.def("put", _print);
-        iframe.def("puts", _println);
-
 
         //others
         iframe.def("?", _peek);
