@@ -53,7 +53,7 @@ public class V {
                 } catch (VException e) {
                     outln(">" + e.message());
                     frame.dump();
-                    //debug(e);
+                    debug(e);
                 } 
             } while (interactive);
             if (_showtime)

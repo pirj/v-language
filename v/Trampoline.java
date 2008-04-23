@@ -96,8 +96,7 @@ public class Trampoline {
                     } else if( now.sym.value().equals("catch")) {
                         now.op = Op.OpCmd; // return to evaluation, but this time we go for the catch clause.
                         now.e.addLine(now.sym.value());
-                    } else { // should not come here.
-                        System.out.println("Some thing bad happened at OpX");
+                    } else { // comes if the symbol is undefined.
                         // save e
                         VException e = now.e;
                         e.addLine(now.sym.value());
@@ -142,10 +141,10 @@ public class Trampoline {
         }
         // pop the first token in the stack
         Token sym = stack.pop();
-        Quote mq = validq(sym, c.scope);
-        // Invoke the quote on our quote by passing
-        // us as the parent.
         try {
+            Quote mq = validq(sym, c.scope);
+            // Invoke the quote on our quote by passing
+            // us as the parent.
             // is that a Cmd?
             if (mq instanceof v.Cmd) {
                 Cont cnew = new Cont(mq, c.scope, c);
@@ -161,7 +160,9 @@ public class Trampoline {
             }
         } catch (VException e) {
             e.addLine(sym.value());
-            Cont cx = new Cont(mq, c.scope, c);
+            QuoteStream qs = new QuoteStream();
+            qs.add((Term)sym);
+            Cont cx = new Cont(new CmdQuote(qs), c.scope, c);
             cx.sym = sym;
             cx.op = Op.OpX;
             cx.e = e;
