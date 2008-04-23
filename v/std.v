@@ -1,5 +1,6 @@
 # Standard definitions.
-[newline '' puts].
+[newline "\n" put].
+[puts put newline].
 
 [pred 1 -].
 [succ 1 +].
