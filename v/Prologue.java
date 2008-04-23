@@ -1872,7 +1872,7 @@ public class Prologue {
             Term f = p.pop();
             // create a new continuation, and push it into the currently executing continuations.
             // save the continuation in the stack.
-            Cont cont = new Cont(f.qvalue(), q.clone(), c);
+            Cont cont = new Cont(f.qvalue(), q.clone(), c.cont);
             Term<Cont> tc = new Term<Cont>(Type.TCont, cont);
             p.push(tc);
             Trampoline.add(cont);
