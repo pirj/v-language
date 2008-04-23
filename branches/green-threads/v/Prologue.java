@@ -892,6 +892,13 @@ public class Prologue {
         }
     };
 
+    static Cmd _showthread = new Cmd() {
+        public Cont trampoline(Cont c) {
+            V.outln(""+c);
+            return c.cont;
+        }
+    };
+
     static Cmd _dframe = new Cmd() {
         public Cont trampoline(Cont c) {
             VFrame q = c.scope;
@@ -1843,6 +1850,47 @@ public class Prologue {
         }
     };
 
+    static Cmd _receive = new Cmd() {
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            // If we got any thing, then push it, else return the same continuation.
+            if (c.msg == null)
+                return c;
+            else {
+                p.push(c.msg);
+                c.msg = null;
+                return c.cont;
+            }
+        }
+    };
+
+    static Cmd _fork = new Cmd() {
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            Term f = p.pop();
+            // create a new continuation, and push it into the currently executing continuations.
+            // save the continuation in the stack.
+            Cont cont = new Cont(f.qvalue(), q.clone(), c);
+            Term<Cont> tc = new Term<Cont>(Type.TCont, cont);
+            p.push(tc);
+            Trampoline.add(cont);
+            return c.cont;
+        }
+    };
+
+    static Cmd _send = new Cmd() {
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            Term tc = p.pop();
+            Term msg = p.pop();
+            tc.contvalue().msg = msg;
+            return c.cont;
+        }
+    };
+
     public static Cont init(final VFrame iframe) {
         //meta
         iframe.def(".", _def);
@@ -1884,6 +1932,7 @@ public class Prologue {
         iframe.def("?", _peek);
         iframe.def("??", _show);
         iframe.def("?debug", _vdebug);
+        iframe.def("?~", _showthread);
         iframe.def("?stack", _show);
         iframe.def("?frame", _dframe);
         iframe.def(".debug", _debug);
@@ -1940,6 +1989,11 @@ public class Prologue {
         iframe.def("&use", _useenv);
         iframe.def("eval", _eval);
         iframe.def("&eval", _evalenv);
+
+        //concurrency
+        iframe.def("receive", _receive);
+        iframe.def("fork", _fork);
+        iframe.def("send", _send);
 
         iframe.def("help", _help);
         iframe.def("env", _env);

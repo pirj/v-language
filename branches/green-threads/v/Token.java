@@ -74,7 +74,16 @@ public abstract class Token {
             Term<VFrame> v = (Term<VFrame>)this;
             return v.val;
         } catch (Exception e) {
-            throw new VException("err:type:quote",this,"Invalid type(need quote)");
+            throw new VException("err:type:quote",this,"Invalid type(need frame)");
+        }
+    }
+
+    public Cont contvalue() {
+        try {
+            Term<Cont> v = (Term<Cont>)this;
+            return v.val;
+        } catch (Exception e) {
+            throw new VException("err:type:quote",this,"Invalid type(need continuation)");
         }
     }
 

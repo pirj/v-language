@@ -33,8 +33,8 @@ public class V {
             for(String s : args)
                 frame.stack().push(new Term<String>(Type.TString, s));
 
-            Trampoline.cont(c);
-
+            Trampoline.add(c);
+            Trampoline.schedule();
             // do we have any args?
             CharStream cs = null;
             if (args.length > 0) {
@@ -47,15 +47,16 @@ public class V {
 
             CmdQuote program = new CmdQuote(new LexStream(cs));
             c = new Cont(program, frame.child(), null); // we save the original defs.
-            do {
+            //do {
                 try {
-                    Trampoline.cont(c);
+                    Trampoline.add(c);// the previous ones would have exhausted by now.
+                    Trampoline.schedule();
                 } catch (VException e) {
                     outln(">" + e.message());
                     frame.dump();
                     debug(e);
                 } 
-            } while (interactive);
+            //} while (interactive);
             if (_showtime)
                 outln("time: " + (System.currentTimeMillis() - start));
         } catch (Exception e) {

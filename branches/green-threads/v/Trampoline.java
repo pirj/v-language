@@ -23,7 +23,10 @@ class Cont {
     Quote quote;
     Quote cmd;
 
+    Term msg;
+
     VException e;
+    int id = 0;
     
     HashMap<String,Object> store = new HashMap<String,Object>();
     Node<Term> n;
@@ -41,7 +44,14 @@ class Cont {
         sym = null;
         n = null;
         top = 0;
+        if (cont != null)
+            id = cont.id;
     }
+
+    public String toString() {
+        return "[cont:"+id+"]";
+    }
+
     public boolean hasNext() {
         if (stream == null)
             return false;
@@ -56,45 +66,61 @@ class Cont {
 }
 
 public class Trampoline {
-    public static void doeval(Quote q, VFrame scope) {
-        Cont now = new Cont(q,scope, null);
-        cont(now);
+    static int idcount = 0;
+    static Vector<Cont> active = new Vector<Cont>();
+    public static void add(Cont c) {
+        c.id = idcount;
+        idcount++;
+        active.add(c);
     }
 
-    public static void cont(Cont now) {
-        while(now != null) {
-            switch (now.op) {
-                case OpEval:
-                    now = do_one(now);
-                    break;
-                case OpCmd:
-                    now = ((Cmd)now.cmd).trampoline(now);
-                    break;
-                case OpX:
-                    if (now.sym == null) { // enclosing quote
-                        // is now available?
-                        if (now.cont == null)
-                            throw now.e;
-                        now.cont.e = now.e;
-                        now = now.cont;
-                        now.op = Op.OpX;
-                    } else if( now.sym.value().equals("catch")) {
-                        now.op = Op.OpCmd; // return to evaluation, but this time we go for the catch clause.
-                        now.e.addLine(now.sym.value());
-                    } else { // comes if the symbol is undefined.
-                        // save e
-                        VException e = now.e;
-                        e.addLine(now.sym.value());
-                        now = now.cont;
-                        now.e = e;
-                        now.op = Op.OpX;
-                    }
-                    break;
-                case OpExit:
-                    now = null;
-                    break;
-            }
+    public static void schedule() {
+        int i = 0;
+        while(active.size() > 0) {
+            i = i % active.size();
+            Cont cont = active.get(i);
+            cont = step(cont);
+            if (cont == null) // See if we should compact
+                active.remove(i);
+            else
+                active.set(i,cont);
+            i++;
         }
+    }
+
+    public static Cont step(Cont now) {
+        switch (now.op) {
+            case OpEval:
+                now = do_one(now);
+                break;
+            case OpCmd:
+                now = ((Cmd)now.cmd).trampoline(now);
+                break;
+            case OpX:
+                if (now.sym == null) { // enclosing quote
+                    // is now available?
+                    if (now.cont == null)
+                        throw now.e;
+                    now.cont.e = now.e;
+                    now = now.cont;
+                    now.op = Op.OpX;
+                } else if( now.sym.value().equals("catch")) {
+                    now.op = Op.OpCmd; // return to evaluation, but this time we go for the catch clause.
+                    now.e.addLine(now.sym.value());
+                } else { // comes if the symbol is undefined.
+                    // save e
+                    VException e = now.e;
+                    e.addLine(now.sym.value());
+                    now = now.cont;
+                    now.e = e;
+                    now.op = Op.OpX;
+                }
+                break;
+            case OpExit:
+                now = null;
+                break;
+        }
+        return now;
     }
 
     private static boolean cando(VStack stack) {
