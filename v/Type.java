@@ -3,6 +3,7 @@ public enum Type {
     TSymbol,
     TQuote,
     TFrame,
+    TCont,
     TString,
     TInt,
     TDouble,

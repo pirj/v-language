@@ -65,4 +65,9 @@ public class VFrame {
     public String toString() {
         return "[frame:"+_id + "]";
     }
+    public VFrame clone() {
+        VFrame vf = child();
+        vf._stack = _stack.clone();
+        return vf;
+    }
 }

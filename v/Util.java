@@ -4,14 +4,6 @@ import java.io.*;
 
 
 public class Util {
-    public static void evaluate(String buff, VFrame q) {
-        try {
-            Trampoline.doeval(getdef(buff),q);
-        } catch (Exception e) {
-            throw new VException("err:eval", new Term<String>(Type.TString,buff), "eval failed " + e.getMessage());
-        }
-    }
-
     static Quote compile(Quote v) {
         QuoteStream nts = new QuoteStream();
         for(Term t:  v.tokens())

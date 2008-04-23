@@ -63,6 +63,14 @@ public class VStack {
         return l;
     }
 
+    public VStack clone() {
+        VStack n = new VStack();
+        for(Term t : getlist()) {
+            n.push(t);
+        }
+        return n;
+    }
+
     public Quote quote() {
         QuoteStream qs = new QuoteStream();
         List<Term> l = getlist();
