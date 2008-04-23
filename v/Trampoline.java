@@ -68,22 +68,7 @@ public class Trampoline {
                     now = do_one(now);
                     break;
                 case OpCmd:
-                    if (!(
-                            now.sym.value().equals("step") ||
-                            now.sym.value().equals("map") ||
-                            now.sym.value().equals("map!") ||
-                            now.sym.value().equals("split!") ||
-                            now.sym.value().equals("split") ||
-                            now.sym.value().equals("filter") ||
-                            now.sym.value().equals("filter!") ||
-                            now.sym.value().equals("fold") ||
-                            now.sym.value().equals("fold!")
-                       )) {
-                        now = ((Cmd)now.cmd).trampoline(now);
-                    } else {
-                        ((Cmd)now.quote).eval(now.scope.child());
-                        now = now.cont;
-                    }
+                    now = ((Cmd)now.cmd).trampoline(now);
                     break;
                 case OpX:
                     if (now.sym == null) { // enclosing quote

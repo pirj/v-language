@@ -13,6 +13,47 @@ class Shield {
     }
 };
 
+class LstCmd extends Cmd {
+    boolean savestack = false;
+    public LstCmd() {
+    }
+
+    void savestack() {
+        savestack = true;
+    }
+
+    final int Start=0,Eval=1,Exit=2;
+    public Cont trampoline(Cont c) {
+        VFrame q = c.scope;
+        VStack p = q.stack();
+
+        switch (c.top) {
+            case Start:
+                return start(c);
+            case Eval:
+                if (c.hasNext()) return eval(c);
+                else return last(c);
+            case Exit:
+            default:
+                return exit(c);
+        }
+    }
+
+    Cont start(Cont c) {
+        return c;
+    }
+    Cont eval(Cont c) {
+        return c;
+    }
+    Cont last(Cont c) {
+        c.top = Exit;
+        return c;
+    }
+    Cont exit(Cont c) {
+        return c.cont;
+    }
+}
+
 public class Prologue {
     private static boolean and(Term a, Term b) {
         return a.bvalue() && b.bvalue();
@@ -208,10 +249,6 @@ public class Prologue {
             return c.cont;
         }
 
-        public void eval(VFrame q) {
-            throw new VException("err:.:not-supported",null, " unexpected operation.");
-        }
-
     };
 
     static Cmd _me = new Cmd() {
@@ -220,9 +257,6 @@ public class Prologue {
             VStack p = q.stack();
             p.push(new Term<VFrame>(Type.TFrame, q));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:$me:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -233,9 +267,6 @@ public class Prologue {
             VFrame t = p.pop().fvalue();
             p.push(new Term<VFrame>(Type.TFrame, t.parent()));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:&parent:not-supported",null, " unexpected operation.");
         }
 
     };
@@ -251,10 +282,6 @@ public class Prologue {
             String symbol = entry.getKey();
             b.fvalue().def(symbol, entry.getValue());
             return c.cont;
-        }
-
-        public void eval(VFrame q) {
-            throw new VException("err:.&:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -318,10 +345,6 @@ public class Prologue {
                         return c.cont;
             }
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:module:not-supported",null, " unexpected operation.");
-        }
     };
 
     // [a b c obj method] java
@@ -344,10 +367,6 @@ public class Prologue {
             Term res = Helper.invoke(object, method, new CmdQuote(qs));
             p.push(res);
             return c.cont;
-        }
-
-        public void eval(VFrame q) {
-            throw new VException("err:java:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -409,10 +428,6 @@ public class Prologue {
                 p.push(i.next());
             return c.cont;
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:view:not-supported",null, " unexpected operation.");
-        }
     };
 
     // trans looks for a [[xxx] [yyy]] instead of splitting with [xxx : yyy]
@@ -456,10 +471,6 @@ public class Prologue {
                 p.push(i.next());
             return c.cont;
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:view:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _words = new Cmd() {
@@ -474,10 +485,6 @@ public class Prologue {
                 nts.add(new Term<String>(Type.TSymbol,s));
             p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts)));
             return c.cont;
-        }
-
-        public void eval(VFrame q) {
-            throw new VException("err:&words:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -505,9 +512,6 @@ public class Prologue {
                     }
             }
         }
-        public void eval(VFrame q) {
-            throw new VException("err:catch:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _throw = new Cmd() {
@@ -520,10 +524,6 @@ public class Prologue {
             cont.e = new VException("err:throw", t, t.value());
             return cont;
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:throw:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _stack = new Cmd() {
@@ -532,10 +532,6 @@ public class Prologue {
             VStack p = q.stack();
             p.push(new Term<Quote>(Type.TQuote, p.quote()));
             return c.cont;
-        }
-
-        public void eval(VFrame q) {
-            throw new VException("err:$stack:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -547,10 +543,6 @@ public class Prologue {
             p.dequote(t.qvalue());
             return c.cont;
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:stack!:not-supported",null, " unexpected operation.");
-        }
     };
 
 
@@ -560,10 +552,6 @@ public class Prologue {
             q.stack().clear();
             return c.cont;
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:abort:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _true = new Cmd() {
@@ -572,10 +560,6 @@ public class Prologue {
             q.stack().push(new Term<Boolean>(Type.TBool, true));
             return c.cont;
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:true:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _false = new Cmd() {
@@ -583,10 +567,6 @@ public class Prologue {
             VFrame q = c.scope;
             q.stack().push(new Term<Boolean>(Type.TBool, false));
             return c.cont;
-        }
-
-        public void eval(VFrame q) {
-            throw new VException("err:false:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -642,10 +622,6 @@ public class Prologue {
                         // discard our continuation and return the parent.
                         return c.cont;
             }
-        }
-
-        public void eval(VFrame q) {
-            throw new VException("err:if:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -718,10 +694,6 @@ public class Prologue {
                     return c.cont;
             }
         }
- 
-        public void eval(VFrame q) {
-            throw new VException("err:when:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _choice = new Cmd() {
@@ -737,10 +709,6 @@ public class Prologue {
             else
                 p.push(af);
             return c.cont;
-        }
- 
-        public void eval(VFrame q) {
-            throw new VException("err:choice:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -799,10 +767,6 @@ public class Prologue {
                         // discard our continuation and return the parent.
                         return c.cont;
             }
-        }
-
-        public void eval(VFrame q) {
-            throw new VException("err:ifte:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -875,10 +839,6 @@ public class Prologue {
                         return c.cont;
             }
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:while:not-supported",null, " unexpected operation.");
-        }
     };
 
     // Libraries
@@ -890,9 +850,6 @@ public class Prologue {
             V.out(t.value());
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _println = new Cmd() {
@@ -902,9 +859,6 @@ public class Prologue {
             Term t = p.pop();
             V.outln(t.value());
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -920,9 +874,6 @@ public class Prologue {
             }
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _show = new Cmd() {
@@ -931,9 +882,6 @@ public class Prologue {
             VStack p = q.stack();
             p.dump();
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -951,9 +899,6 @@ public class Prologue {
               for(String s: sort(q.parent().dict().keySet())) V.out(s + " ");
               V.outln("\n________________");
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -973,9 +918,6 @@ public class Prologue {
             for(String s: sort(q.dict().keySet())) V.out(s + " ");
             V.outln("\n________________");
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _debug = new Cmd() {
@@ -985,283 +927,337 @@ public class Prologue {
             V.debug(p.pop().bvalue());
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
-    };
-
-    static Cmd _step = new Cmd() {
-        public void eval(VFrame q) {
-            VStack p = q.stack();
-
-            Term action = p.pop();
-            Term list = p.pop();
-
-            Iterator<Term> fstream = list.qvalue().tokens().iterator();
-
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term t = fstream.next();
-                // push it on our current stack
-                p.push(t);
-
-                // apply the action
-                // We dont do the walk here since the action is in the form of a quote.
-                // we will have to dequote it, and walk one by one if we are to do this.
-                Trampoline.doeval(action.qvalue(),q);
-            }
-        }
     };
 
     // this map is not a stack invariant. specifically 
     // 1 2 3 4  [a b c d] [[] cons cons] map => [[4 a] [3 b] [2 c] [1 d]]
-    static Cmd _map = new Cmd() {
-        public void eval(VFrame q) {
+    static Cmd _map = new LstCmd() {
+        Cont start(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
 
             Term action = p.pop();
             Term list = p.pop();
 
-            Iterator<Term> fstream = list.qvalue().tokens().iterator();
+            Cont cont = new Cont(list.qvalue(),c.scope, c.cont);
+            // making sure that we come back.
+            cont.sym = c.sym;
+            cont.cmd = c.cmd;
+            cont.op = c.op;
+            cont.top = Eval;
+            cont.store.put("map:action", action);
+            return cont;
+        }
 
-            // copy the rest of tokens to our own stream.
-            QuoteStream nts = new QuoteStream();
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term t = fstream.next();
-                // push it on our current stack
-                p.push(t);
+        Cont eval(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
 
-                // apply the action
-                // We dont do the walk here since the action is in the form of a quote.
-                // we will have to dequote it, and walk one by one if we are to do this.
-                Trampoline.doeval(action.qvalue(),q);
-                // pop it back into a new quote
-                Term res = p.pop();
-                nts.add(res);
+            // did we go through a round before this?
+            QuoteStream nts = (QuoteStream)c.store.get("map:result");
+            if (nts == null) {
+                nts = new QuoteStream();
+                c.store.put("map:result", nts);
+            } else {
+                nts.add(p.pop());
             }
+
+            Term t = c.next();
+            p.push(t);
+            Term action = (Term)c.store.get("map:action");
+            Cont cont = new Cont(action.qvalue(), q, c);
+            return cont;
+        }
+
+        Cont last(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            QuoteStream nts = (QuoteStream)c.store.get("map:result");
+            nts.add(p.pop());
+            c.top= Exit;
+            return c;
+        }
+
+        Cont exit(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            QuoteStream nts = (QuoteStream)c.store.get("map:result");
             p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts)));
+            return c.cont;
         }
     };
 
     // map is a stack invariant. specifically 
     // 1 2 3 4  [a b c d] [[] cons cons] map => [[4 a] [4 b] [4 c] [4 d]]
-    static Cmd _map_i = new Cmd() {
-        public void eval(VFrame q) {
+    static Cmd _map_i = new LstCmd() {
+        Cont start(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
 
             Term action = p.pop();
             Term list = p.pop();
 
-            Iterator<Term> fstream = list.qvalue().tokens().iterator();
+            Cont cont = new Cont(list.qvalue(),c.scope, c.cont);
+            // making sure that we come back.
+            cont.sym = c.sym;
+            cont.cmd = c.cmd;
+            cont.op = c.op;
+            cont.top = Eval;
+            Node<Term> n = p.now;
+            cont.store.put("map:stack", n);
+            cont.store.put("map:action", action);
+            return cont;
+        }
 
-            // copy the rest of tokens to our own stream.
-            QuoteStream nts = new QuoteStream();
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term t = fstream.next();
-                Node<Term> n = p.now;
-                // push it on our current stack
-                p.push(t);
+        Cont eval(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
 
-                // apply the action
-                // We dont do the walk here since the action is in the form of a quote.
-                // we will have to dequote it, and walk one by one if we are to do this.
-                Trampoline.doeval(action.qvalue(),q);
-                // pop it back into a new quote
-                Term res = p.pop();
-                p.now = n;
-                nts.add(res);
+            // did we go through a round before this?
+            QuoteStream nts = (QuoteStream)c.store.get("map:result");
+            if (nts == null) {
+                c.store.put("map:result", new QuoteStream());
+            } else {
+                nts.add(p.pop());
+                p.now = (Node<Term>)c.store.get("map:stack");
             }
+
+            Term t = c.next();
+            p.push(t);
+            Term action = (Term)c.store.get("map:action");
+            Cont cont = new Cont(action.qvalue(), q, c);
+            return cont;
+        }
+
+        Cont last(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            QuoteStream nts = (QuoteStream)c.store.get("map:result");
+            nts.add(p.pop());
+            p.now = (Node<Term>)c.store.get("map:stack");
+            c.top= Exit;
+            return c;
+        }
+
+        Cont exit(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            QuoteStream nts = (QuoteStream)c.store.get("map:result");
             p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts)));
+            return c.cont;
         }
     };
 
-    static Cmd _split = new Cmd() {
-        public void eval(VFrame q) {
+    static Cmd _split = new LstCmd() {
+        Cont start(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
 
             Term action = p.pop();
             Term list = p.pop();
 
-            Iterator<Term> fstream = list.qvalue().tokens().iterator();
+            Cont cont = new Cont(list.qvalue(),c.scope, c.cont);
+            // making sure that we come back.
+            cont.sym = c.sym;
+            cont.cmd = c.cmd;
+            cont.op = c.op;
+            cont.top = Eval;
+            cont.store.put("split:action", action);
+            return cont;
+        }
 
-            // copy the rest of tokens to our own stream.
-            QuoteStream nts1 = new QuoteStream();
-            QuoteStream nts2 = new QuoteStream();
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term t = fstream.next();
-                // push it on our current stack
-                p.push(t);
+        Cont eval(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
 
-                // apply the action
-                // We dont do the walk here since the action is in the form of a quote.
-                // we will have to dequote it, and walk one by one if we are to do this.
-                Trampoline.doeval(action.qvalue(),q);
-                // pop it back into a new quote
-                Term res = p.pop();
-                if (res.bvalue())
-                    nts1.add(t);
+            // did we go through a round before this?
+            QuoteStream[] nts = (QuoteStream[])c.store.get("split:result");
+            if (nts == null) {
+                nts = new QuoteStream[]{new QuoteStream(), new QuoteStream()};
+                c.store.put("split:result", nts);
+            } else {
+                Term t = (Term)c.store.get("split:term");
+                if (p.pop().bvalue())
+                    nts[0].add(t);
                 else
-                    nts2.add(t);
+                    nts[1].add(t);
             }
-            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts1)));
-            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts2)));
+
+            Term t = c.next();
+            c.store.put("split:term", t);
+            p.push(t);
+            Term action = (Term)c.store.get("split:action");
+            Cont cont = new Cont(action.qvalue(), q, c);
+            return cont;
+        }
+
+        Cont last(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            QuoteStream[] nts = (QuoteStream[])c.store.get("split:result");
+            Term t = (Term)c.store.get("split:term");
+            if (p.pop().bvalue())
+                nts[0].add(t);
+            else
+                nts[1].add(t);
+            c.top= Exit;
+            return c;
+        }
+
+        Cont exit(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            QuoteStream nts[] = (QuoteStream[])c.store.get("split:result");
+            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts[0])));
+            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts[1])));
+            return c.cont;
         }
     };
 
-    static Cmd _split_i = new Cmd() {
-        public void eval(VFrame q) {
+    static Cmd _split_i = new LstCmd() {
+
+        Cont start(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
 
             Term action = p.pop();
             Term list = p.pop();
 
-            Iterator<Term> fstream = list.qvalue().tokens().iterator();
+            Cont cont = new Cont(list.qvalue(),c.scope, c.cont);
+            // making sure that we come back.
+            cont.sym = c.sym;
+            cont.cmd = c.cmd;
+            cont.op = c.op;
+            cont.top = Eval;
+            Node<Term> n = p.now;
+            cont.store.put("split:stack", n);
+            cont.store.put("split:action", action);
+            return cont;
+        }
 
-            // copy the rest of tokens to our own stream.
-            QuoteStream nts1 = new QuoteStream();
-            QuoteStream nts2 = new QuoteStream();
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term t = fstream.next();
-                // push it on our current stack
-                Node<Term> n = p.now;
-                p.push(t);
+        Cont eval(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
 
-                // apply the action
-                // We dont do the walk here since the action is in the form of a quote.
-                // we will have to dequote it, and walk one by one if we are to do this.
-                Trampoline.doeval(action.qvalue(),q);
-                // pop it back into a new quote
-                Term res = p.pop();
-                p.now = n;
-                if (res.bvalue())
-                    nts1.add(t);
+            // did we go through a round before this?
+            QuoteStream[] nts = (QuoteStream[])c.store.get("split:result");
+            if (nts == null) {
+                nts = new QuoteStream[]{new QuoteStream(), new QuoteStream()};
+                c.store.put("split:result", nts);
+            } else {
+                Term t = (Term)c.store.get("split:term");
+                if (p.pop().bvalue())
+                    nts[0].add(t);
                 else
-                    nts2.add(t);
+                    nts[1].add(t);
+                p.now = (Node<Term>)c.store.get("split:stack");
             }
-            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts1)));
-            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts2)));
-        }
-    };
 
-    static Cmd _filter = new Cmd() {
-        public void eval(VFrame q) {
+            Term t = c.next();
+            c.store.put("split:term", t);
+            p.push(t);
+            Term action = (Term)c.store.get("split:action");
+            Cont cont = new Cont(action.qvalue(), q, c);
+            return cont;
+        }
+
+        Cont last(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
-
-            Term action = p.pop();
-            Term list = p.pop();
-
-            Iterator<Term> fstream = list.qvalue().tokens().iterator();
-
-            // copy the rest of tokens to our own stream.
-            QuoteStream nts = new QuoteStream();
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term t = fstream.next();
-                // push it on our current stack
-                p.push(t);
-
-                // apply the action
-                // We dont do the walk here since the action is in the form of a quote.
-                // we will have to dequote it, and walk one by one if we are to do this.
-                Trampoline.doeval(action.qvalue(),q);
-                // pop it back into a new quote
-                Term res = p.pop();
-                if (res.bvalue())
-                    nts.add(t);
-            }
-            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts)));
+            QuoteStream[] nts = (QuoteStream[])c.store.get("split:result");
+            Term t = (Term)c.store.get("split:term");
+            if (p.pop().bvalue())
+                nts[0].add(t);
+            else
+                nts[1].add(t);
+            p.now = (Node<Term>)c.store.get("split:stack");
+            c.top= Exit;
+            return c;
         }
-    };
 
-    static Cmd _filter_i = new Cmd() {
-        public void eval(VFrame q) {
+        Cont exit(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
-
-            Term action = p.pop();
-            Term list = p.pop();
-
-            Iterator<Term> fstream = list.qvalue().tokens().iterator();
-
-            // copy the rest of tokens to our own stream.
-            QuoteStream nts = new QuoteStream();
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term t = fstream.next();
-                // push it on our current stack
-                Node<Term> n = p.now;
-                p.push(t);
-
-                // apply the action
-                // We dont do the walk here since the action is in the form of a quote.
-                // we will have to dequote it, and walk one by one if we are to do this.
-                Trampoline.doeval(action.qvalue(),q);
-                // pop it back into a new quote
-                Term res = p.pop();
-                p.now = n;
-                if (res.bvalue())
-                    nts.add(t);
-            }
-            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts)));
+            QuoteStream nts[] = (QuoteStream[])c.store.get("split:result");
+            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts[0])));
+            p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts[1])));
+            return c.cont;
         }
+
     };
 
-    static Cmd _fold = new Cmd() {
-        public void eval(VFrame q) {
+    static Cmd _fold = new LstCmd() {
+        Cont start(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
 
             Term action = p.pop();
             Term init = p.pop();
             Term list = p.pop();
-
-            Iterator<Term> fstream = list.qvalue().tokens().iterator();
-
-            // push the init value in expectation of the next val and action.
             p.push(init);
-            // copy the rest of tokens to our own stream.
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term t = fstream.next();
-                // push it on our current stack
-                p.push(t);
-                // apply the action
-                Trampoline.doeval(action.qvalue(),q);
-            }
-            Term res = p.pop();
-            p.push(res);
-            // the result will be on the stack at the end of this cycle.
+
+            Cont cont = new Cont(list.qvalue(),c.scope, c.cont);
+            // making sure that we come back.
+            cont.sym = c.sym;
+            cont.cmd = c.cmd;
+            cont.op = c.op;
+            cont.top = Eval;
+            cont.store.put("fold:action", action);
+            return cont;
+        }
+        Cont eval(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+
+            Term t = c.next();
+            p.push(t);
+            Term action = (Term)c.store.get("fold:action");
+            Cont cont = new Cont(action.qvalue(), q, c);
+            return cont;
         }
     };
 
-    static Cmd _fold_i = new Cmd() {
-        public void eval(VFrame q) {
+    static Cmd _fold_i = new LstCmd() {
+        Cont start(Cont c) {
+            VFrame q = c.scope;
             VStack p = q.stack();
 
             Term action = p.pop();
             Term init = p.pop();
             Term list = p.pop();
+
 
             Node<Term> n = p.now;
-            Iterator<Term> fstream = list.qvalue().tokens().iterator();
-
-            // push the init value in expectation of the next val and action.
             p.push(init);
-            // copy the rest of tokens to our own stream.
-            while (fstream.hasNext()) {
-                // extract the relevant element from list,
-                Term t = fstream.next();
-                // push it on our current stack
-                p.push(t);
-                // apply the action
-                Trampoline.doeval(action.qvalue(),q);
-            }
+
+            Cont cont = new Cont(list.qvalue(),c.scope, c.cont);
+            // making sure that we come back.
+            cont.sym = c.sym;
+            cont.cmd = c.cmd;
+            cont.op = c.op;
+            cont.top = Eval;
+            cont.store.put("fold:stack", n);
+            cont.store.put("fold:action", action);
+            return cont;
+        }
+        Cont eval(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+
+            Term t = c.next();
+            p.push(t);
+            Term action = (Term)c.store.get("fold:action");
+            Cont cont = new Cont(action.qvalue(), q, c);
+            return cont;
+        }
+
+        Cont exit(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
             Term res = p.pop();
-            p.now = n;
+            p.now = (Node<Term>)c.store.get("fold:stack");
             p.push(res);
-            // the result will be on the stack at the end of this cycle.
+            return c.cont;
         }
     };
 
@@ -1276,9 +1272,6 @@ public class Prologue {
 
             p.push(new Term<Integer>(Type.TInt , count));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1296,9 +1289,6 @@ public class Prologue {
             }
             p.push(new Term<Boolean>(Type.TBool, false));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1319,9 +1309,6 @@ public class Prologue {
             }
             throw new VException("err:at:overflow",i, "[" + list.value() + "]:" + idx);
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _drop = new Cmd() {
@@ -1341,9 +1328,6 @@ public class Prologue {
             }
             p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts)));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1367,9 +1351,6 @@ public class Prologue {
             p.push(new Term<Quote>(Type.TQuote, new CmdQuote(nts)));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
 
@@ -1383,9 +1364,6 @@ public class Prologue {
             Cont cont = new Cont(prog.qvalue(), q, c.cont);
             return cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _dequoteenv = new Cmd() {
@@ -1397,9 +1375,6 @@ public class Prologue {
             Term env = p.pop();
             Cont cont = new Cont(prog.qvalue(), env.fvalue(), c.cont);
             return cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1417,9 +1392,6 @@ public class Prologue {
                 p.push(new Term<Double>(Type.TDouble, dres));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _sub = new Cmd() {
@@ -1435,9 +1407,6 @@ public class Prologue {
             else
                 p.push(new Term<Double>(Type.TDouble, dres));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1455,9 +1424,6 @@ public class Prologue {
                 p.push(new Term<Double>(Type.TDouble, dres));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _div = new Cmd() {
@@ -1474,9 +1440,6 @@ public class Prologue {
                 p.push(new Term<Double>(Type.TDouble, dres));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _gt = new Cmd() {
@@ -1487,9 +1450,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Boolean>(Type.TBool, isGt(a, b)));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1502,9 +1462,6 @@ public class Prologue {
             p.push(new Term<Boolean>(Type.TBool, isLt(a, b)));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _lteq = new Cmd() {
@@ -1515,9 +1472,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Boolean>(Type.TBool, !isGt(a, b)));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1530,9 +1484,6 @@ public class Prologue {
             p.push(new Term<Boolean>(Type.TBool, !isLt(a, b)));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _eq = new Cmd() {
@@ -1543,9 +1494,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Boolean>(Type.TBool, isEq(a, b)));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1558,9 +1506,6 @@ public class Prologue {
             p.push(new Term<Boolean>(Type.TBool, !isEq(a, b)));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _and = new Cmd() {
@@ -1571,9 +1516,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Boolean>(Type.TBool, and(a, b)));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1586,9 +1528,6 @@ public class Prologue {
             p.push(new Term<Boolean>(Type.TBool, or(a, b)));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _not = new Cmd() {
@@ -1598,9 +1537,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Boolean>(Type.TBool, !a.bvalue()));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1614,9 +1550,6 @@ public class Prologue {
             p.push(new Term<Boolean>(Type.TBool, a.type == Type.TBool));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _isinteger = new Cmd() {
@@ -1626,9 +1559,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Boolean>(Type.TBool, a.type == Type.TInt));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1640,9 +1570,6 @@ public class Prologue {
             p.push(new Term<Boolean>(Type.TBool, a.type == Type.TDouble));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _issym = new Cmd() {
@@ -1652,9 +1579,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Boolean>(Type.TBool, a.type == Type.TSymbol));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1666,9 +1590,6 @@ public class Prologue {
             p.push(new Term<Boolean>(Type.TBool, a.type == Type.TQuote));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _isstr = new Cmd() {
@@ -1678,9 +1599,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Boolean>(Type.TBool, a.type == Type.TString));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1693,9 +1611,6 @@ public class Prologue {
                         a.type == Type.TInt || a.type == Type.TDouble));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _ischar = new Cmd() {
@@ -1705,9 +1620,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Boolean>(Type.TBool, a.type == Type.TChar));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1719,9 +1631,6 @@ public class Prologue {
             p.push(new Term<String>(Type.TString, a.value()));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _toint = new Cmd() {
@@ -1732,9 +1641,6 @@ public class Prologue {
             p.push(new Term<Integer>(Type.TInt, (new Double(a.value())).intValue()));
             return c.cont;
         }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _todecimal = new Cmd() {
@@ -1744,9 +1650,6 @@ public class Prologue {
             Term a = p.pop();
             p.push(new Term<Double>(Type.TDouble, new Double(a.value())));
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:-:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1818,11 +1721,6 @@ public class Prologue {
                     return c.cont;
             }
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:use:not-supported",null, " unexpected operation.");
-        }
-
     };
 
     // [std] $me &use
@@ -1889,11 +1787,6 @@ public class Prologue {
                     return c.cont;
             }
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:&use:not-supported",null, " unexpected operation.");
-        }
-
     };
 
     static Cmd _eval = new Cmd() {
@@ -1912,10 +1805,6 @@ public class Prologue {
                 throw new VException("err:eval",buff, buff.value());
             }
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:eval:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _evalenv = new Cmd() {
@@ -1929,10 +1818,6 @@ public class Prologue {
             Cont cont = new Cont(val, env, c.cont);
             return c.cont;
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:&eval:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _help = new Cmd() {
@@ -1942,9 +1827,6 @@ public class Prologue {
             for(String s : new TreeSet<String>(bind.keySet()))
                 V.outln(s);
             return c.cont;
-        }
-        public void eval(VFrame q) {
-            throw new VException("err:help:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -1956,10 +1838,6 @@ public class Prologue {
             p.push(new Term<Quote>(Type.TQuote, env));
             return c.cont;
         }
-
-        public void eval(VFrame q) {
-            throw new VException("err:env:not-supported",null, " unexpected operation.");
-        }
     };
 
     static Cmd _time = new Cmd() {
@@ -1970,10 +1848,6 @@ public class Prologue {
             boolean val = t.bvalue();
             V.showtime(val);
             return c.cont;
-        }
-
-        public void eval(VFrame q) {
-            throw new VException("err:.time!:not-supported",null, " unexpected operation.");
         }
     };
 
@@ -2035,11 +1909,8 @@ public class Prologue {
 
 
         // on list
-        iframe.def("step", _step);
         iframe.def("map!", _map);
         iframe.def("map", _map_i);
-        iframe.def("filter!", _filter);
-        iframe.def("filter", _filter_i);
         iframe.def("split!", _split);
         iframe.def("split", _split_i);
         iframe.def("fold!", _fold);

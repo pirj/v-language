@@ -13,7 +13,6 @@ public abstract class Cmd implements Quote {
         return null;
     }	
 
-    public abstract void eval(VFrame q);
     public Cont trampoline(Cont c) {
         return null;
     }
