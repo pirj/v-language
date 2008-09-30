@@ -1881,6 +1881,30 @@ public class Prologue {
         }
     };
 
+    static Cmd _callcc = new Cmd() {
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            // create a new continuation, and push it into the currently executing continuations.
+            // save the continuation in the stack.
+            Cont cont = new Cont(null, q.clone(), c.cont.dup());
+            cont.msg = null;
+            Term<Cont> tc = new Term<Cont>(Type.TCont, cont);
+            p.push(tc);
+            return c.cont;
+        }
+    };
+
+    static Cmd _resume = new Cmd() {
+        public Cont trampoline(Cont c) {
+            VFrame q = c.scope;
+            VStack p = q.stack();
+            Term tc = p.pop();
+            return tc.contvalue();
+        }
+    };
+
+
     static Cmd _send = new Cmd() {
         public Cont trampoline(Cont c) {
             VFrame q = c.scope;
@@ -1995,6 +2019,8 @@ public class Prologue {
         iframe.def("receive", _receive);
         iframe.def("fork", _fork);
         iframe.def("send", _send);
+        iframe.def("callcc", _callcc);
+        iframe.def("resume", _resume);
 
         iframe.def("help", _help);
         iframe.def("env", _env);
