@@ -48,7 +48,6 @@ class Cont {
     Quote quote;
     Quote cmd;
     MsgBox msg;
-
     
     void initmsg() {
         msg = new MsgBox();
@@ -65,13 +64,13 @@ class Cont {
         op = Op.OpEval;
         // TODO: remove quote.
         quote = q;
-        cmd = q;
-        if (quote.tokens() != null)
+        cmd = quote;
+        if ((quote != null) && (quote.tokens() != null))
             stream = quote.tokens().iterator();
-        else 
+        else
             stream = null;
+
         sym = null;
-        n = null;
         top = 0;
         if (cont != null) {
             id = cont.id;
@@ -101,6 +100,13 @@ class Cont {
         if (stream == null)
             return null;
         return stream.next();
+    }
+
+    public Cont dup() {
+        if (cont == null)
+            return new Cont(quote,scope,null);
+        else
+            return new Cont(quote,scope,cont.dup());
     }
 }
 
@@ -136,7 +142,7 @@ public class Trampoline {
             case OpCmd:
                 now = ((Cmd)now.cmd).trampoline(now);
                 break;
-            case OpX:
+            case OpX: //Exception thrown
                 if (now.sym == null) { // enclosing quote
                     // is now available?
                     if (now.cont == null)
