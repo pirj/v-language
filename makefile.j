@@ -29,3 +29,5 @@ release: all test
 			v_$(RELEASE)/v/*.v v_$(RELEASE)/scripts/*.v v_$(RELEASE)/Makefile && \
 		gzip -f v_$(RELEASE).tar && mv v_$(RELEASE).tar.gz ..
 
+clean:
+	-rm pkg/v.jar
