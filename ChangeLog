@@ -1,3 +1,5 @@
+30.9.2008
+	Add true continuations (callcc/resume)
 13.1.2008 rahul
 	scripts/test.v: add while tests
 	v/V.java: switch exception printing on (for now)
